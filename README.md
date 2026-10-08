@@ -60,6 +60,11 @@ existing `/Applications/MouseTune.app`.
 Licensed under the [Apache License 2.0](LICENSE), the same license as upstream. Original work: Copyright 2026 OpenSnek
 contributors. Changes in this fork: Copyright 2026 mustafacicek-eee.
 
+## Sponsoring
+
+The Sponsor button on this repository supports the work in this fork (the changes listed above). OpenSnek itself is
+built and maintained by gh123man and its contributors; see the [upstream repository](https://github.com/gh123man/OpenSnek).
+
 ## Trademarks
 
 MouseTune is an independent project. It is not affiliated with, endorsed by or sponsored by Razer or by the OpenSnek
