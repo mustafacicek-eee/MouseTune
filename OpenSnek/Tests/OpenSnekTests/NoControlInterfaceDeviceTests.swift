@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): expected message no longer names the app.
 import Foundation
 import XCTest
 import IOKit
@@ -51,7 +52,7 @@ final class NoControlInterfaceDeviceTests: XCTestCase {
         XCTAssertFalse(refreshed)
         XCTAssertEqual(availability, .noControlInterface)
         XCTAssertEqual(status, "Unsupported")
-        XCTAssertEqual(message, "This Razer device does not expose the standard Razer USB control interface on macOS, so OpenSnek cannot configure it. Its normal functions (such as audio and media keys) are unaffected.")
+        XCTAssertEqual(message, "This Razer device does not expose the standard Razer USB control interface on macOS, so this app cannot configure it. Its normal functions (such as audio and media keys) are unaffected.")
         XCTAssertTrue(fastPollingDeviceIDs.isEmpty)
 
         _ = await appState.deviceController.refreshState(for: headset)

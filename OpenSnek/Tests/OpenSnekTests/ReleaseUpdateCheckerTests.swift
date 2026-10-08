@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): update checks are disabled in this fork.
 import XCTest
 import OpenSnekAppSupport
 @testable import OpenSnek
@@ -25,7 +26,8 @@ final class ReleaseUpdateCheckerTests: XCTestCase {
     func testCurrentBuildChannelDefaultsToReleaseWhenUnset() {
         let bundle = bundleWithInfoDictionary([:])
         XCTAssertEqual(ReleaseUpdateChecker.currentBuildChannel(bundle: bundle), .release)
-        XCTAssertTrue(ReleaseUpdateChecker.shouldCheckForUpdates(bundle: bundle))
+        // MouseTune fork: update checks are always off because the fork has no release feed.
+        XCTAssertFalse(ReleaseUpdateChecker.shouldCheckForUpdates(bundle: bundle))
     }
 
     func testCurrentBuildChannelRecognizesDevBuilds() {

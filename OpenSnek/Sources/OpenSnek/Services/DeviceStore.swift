@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): unsupported-device message no longer names the app.
 import AppKit
 import Foundation
 import Observation
@@ -126,7 +127,7 @@ import SwiftUI
         case .error: return errorMessage ?? "Live telemetry is unavailable right now."
         case .unsupported:
             if selectedDevice.transport == .usb, deviceController.usbControlAvailability(for: selectedDevice) == .noControlInterface {
-                return "This Razer device does not expose the standard Razer USB control interface on macOS, so OpenSnek cannot configure it. Its normal functions (such as audio and media keys) are unaffected."
+                return "This Razer device does not expose the standard Razer USB control interface on macOS, so this app cannot configure it. Its normal functions (such as audio and media keys) are unaffected."
             }
             return nil
         case .connected: return nil

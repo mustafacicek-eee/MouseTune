@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): battery readings are also recorded for battery history.
 import Foundation
 import Network
 import OpenSnekCore
@@ -683,7 +684,10 @@ final actor LocalBridgeBackend: HIDAccessRefreshControllingBackend, ApplyOptions
         return merged
     }
 
-    private func updateSoftwareLightingBatteryPercent(deviceID: String, from state: MouseState) { Task { [softwareLightingEngine, batteryPercent = state.battery_percent] in await softwareLightingEngine.updateBatteryPercent(deviceID: deviceID, batteryPercent: batteryPercent) } }
+    private func updateSoftwareLightingBatteryPercent(deviceID: String, from state: MouseState) {
+        Task { [softwareLightingEngine, batteryPercent = state.battery_percent] in await softwareLightingEngine.updateBatteryPercent(deviceID: deviceID, batteryPercent: batteryPercent) }
+        Task { [batteryPercent = state.battery_percent, charging = state.charging] in await BatteryHistoryRecorder.shared.record(deviceID: deviceID, percent: batteryPercent, charging: charging) }
+    }
 
     private func recordUSBControlAvailability(_ availability: USBControlAvailability, for deviceID: String, updatedAt: Date, publishSnapshot: Bool) {
         let previousAvailability = usbControlAvailabilityByDeviceID[deviceID]

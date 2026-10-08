@@ -1,5 +1,7 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): on-screen text goes through L() for the Turkish translation; MouseTune visual theme (neutral dark, sky-blue accent, SF Pro type).
 import OpenSnekAppSupport
 import SwiftUI
+import OpenSnekCore
 
 /// Renders the local profile library panel UI.
 struct LocalProfileLibraryPanel: View {
@@ -48,16 +50,16 @@ struct LocalProfileLibraryPanel: View {
     private var loadingOverlay: some View {
         HStack(spacing: 8) {
             ProgressView().controlSize(.small)
-            Text("Loading profile...").font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.80))
+            Text("Loading profile...").font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.80))
         }.padding(.horizontal, 12).padding(.vertical, 8).background(RoundedRectangle(cornerRadius: 8).fill(Color.black.opacity(0.38))).overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.12), lineWidth: 1)).accessibilityIdentifier("local-profile-loading-overlay")
     }
 
     private var localProfileSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(selectedSlotIsAssigned ? "Replace Selected Profile With" : "Load Profile").font(.system(size: 11, weight: .black, design: .rounded)).foregroundStyle(.white.opacity(0.74))
+            Text(L(selectedSlotIsAssigned ? "Replace Selected Profile With" : "Load Profile")).font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.74))
 
             if visibleProfiles.isEmpty {
-                Text("No local profiles yet").font(.system(size: 11, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.42)).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 4)
+                Text("No local profiles yet").font(.system(size: 11, weight: .medium)).foregroundStyle(.white.opacity(0.42)).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 4)
             } else {
                 ScrollView(.vertical) {
                     VStack(alignment: .leading, spacing: localProfileRowSpacing) {
@@ -80,7 +82,7 @@ struct LocalProfileLibraryPanel: View {
 
     private var newProfilePopover: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("New Profile").font(.system(size: 12, weight: .black, design: .rounded)).foregroundStyle(.white.opacity(0.82))
+            Text("New Profile").font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.82))
 
             TextField("Profile name", text: $newLocalProfileName).textFieldStyle(.roundedBorder).frame(width: 260).accessibilityIdentifier("local-profile-new-name-field")
 
@@ -187,7 +189,7 @@ private struct LocalProfileLibraryRow: View {
 
     private var managementPopover: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Rename").font(.system(size: 12, weight: .black, design: .rounded)).foregroundStyle(.white.opacity(0.82))
+            Text("Rename").font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.82))
 
             TextField("Profile name", text: $renameName).textFieldStyle(.roundedBorder).frame(width: 220).accessibilityIdentifier("local-profile-rename-field-\(profile.id.uuidString)")
 

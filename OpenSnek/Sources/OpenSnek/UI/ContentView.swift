@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): app name shown in the UI changed from OpenSnek to MouseTune; on-screen text goes through L() for the Turkish translation; MouseTune visual theme (neutral dark, sky-blue accent, SF Pro type); sidebar removed.
 import SwiftUI
 import AppKit
 import OpenSnekCore
@@ -11,11 +12,8 @@ struct ContentView: View {
     @State private var dismissedPermissionNoticeKey: String?
 
     var body: some View {
-        NavigationSplitView {
-            DeviceSidebarView(deviceStore: deviceStore).navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 340)
-        } detail: {
-            detail
-        }.navigationSplitViewStyle(.automatic).task {
+        // MouseTune fork: no sidebar. The device name in the header switches devices and the gear sits top-right.
+        detail.mouseTuneHidesTopScrollEdge().mouseTuneHidesTitlebarBackground().background(MouseTuneTheme.windowTop.ignoresSafeArea()).tint(MouseTuneTheme.accent).task {
             await runtimeStore.start()
             await runtimeStore.refreshHIDAccessStatus(forceRefresh: false)
         }.onChange(of: deviceStore.selectedDeviceID) { _, _ in
@@ -33,7 +31,7 @@ struct ContentView: View {
 
     private var detail: some View {
         ZStack {
-            LinearGradient(colors: [Color(hex: 0x0E1218), Color(hex: 0x121D15)], startPoint: .topLeading, endPoint: .bottomTrailing).ignoresSafeArea()
+            MouseTuneTheme.windowBackground
 
             if let selected = deviceStore.selectedDevice {
                 if deviceStore.selectedDeviceIsStrictlyUnsupported || deviceStore.selectedDeviceIsUnsupportedUSB {
@@ -50,7 +48,7 @@ struct ContentView: View {
                     DeviceUnavailableDetailView(deviceStore: deviceStore, selected: selected)
                 }
             } else {
-                emptyState.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                emptyState.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center).overlay(alignment: .topTrailing) { SettingsGearButton().padding(.top, 18).padding(.trailing, 20) }
             }
         }.overlay(alignment: .topLeading) {
             if !noticeItems.isEmpty {
@@ -78,7 +76,7 @@ struct ContentView: View {
     }
 
     private var permissionGuidanceDetailLines: [String] {
-        ["Open Input Monitoring settings and turn on OpenSnek.", "If it still looks stuck, use Reset Permissions and try again.", "After changing the permission, quit and reopen OpenSnek.", "Current app host: \(runtimeStore.hidAccessStatus.hostLabel)"]
+        ["Open Input Monitoring settings and turn on MouseTune.", "If it still looks stuck, use Reset Permissions and try again.", "After changing the permission, quit and reopen MouseTune.", L("Current app host: %@", runtimeStore.hidAccessStatus.hostLabel)]
     }
 
     private var activePermissionNoticeKey: String? {
@@ -125,7 +123,7 @@ struct ContentView: View {
         if showsBluetoothHIDAccessCallout, let selectedDevice = deviceStore.selectedDevice {
             notices.append(
                 NoticeItem(
-                    title: "Allow Input Monitoring", message: "OpenSnek can talk to \(selectedDevice.product_name), but macOS is still blocking the permission that lets instant on-device DPI changes show up right away.", detailLines: permissionGuidanceDetailLines, tone: .permission,
+                    title: "Allow Input Monitoring", message: L("MouseTune can talk to %@, but macOS is still blocking the permission that lets instant on-device DPI changes show up right away.", selectedDevice.product_name), detailLines: permissionGuidanceDetailLines, tone: .permission,
                     actions: [
                         NoticeAction(title: "Open Settings", isProminent: true) { PermissionSupport.openInputMonitoringSettings() }, NoticeAction(title: "Reset Permissions") { Task { await runtimeStore.resetAllPermissions() } },
                         NoticeAction(title: "Refresh") {
@@ -157,7 +155,7 @@ struct ContentView: View {
 
             notices.append(
                 NoticeItem(
-                    title: isInputMonitoringError(deviceStore.errorMessage) ? "Allow Input Monitoring" : usbCalloutTitle, message: isInputMonitoringError(deviceStore.errorMessage) ? "OpenSnek needs one more macOS permission before it can read all USB settings from this mouse." : usbCalloutMessage,
+                    title: isInputMonitoringError(deviceStore.errorMessage) ? "Allow Input Monitoring" : usbCalloutTitle, message: isInputMonitoringError(deviceStore.errorMessage) ? "MouseTune needs one more macOS permission before it can read all USB settings from this mouse." : usbCalloutMessage,
                     detailLines: detailLines, tone: isInputMonitoringError(deviceStore.errorMessage) ? .permission : .warning, actions: actions))
         }
 
@@ -224,9 +222,9 @@ struct ContentView: View {
         var items: [String] = []
         if let maxDPI = profile.passiveDPIInput?.maximumDPI { items.append("DPI \(maxDPI / 1000)K") } else { items.append("DPI") }
         if profile.supportsIndependentXYDPI { items.append("X/Y") }
-        if !profile.buttonLayout.writableSlots.isEmpty { items.append("Buttons") }
-        if !profile.supportedLightingEffects.isEmpty || !profile.usbLightingLEDIDs.isEmpty || !profile.usbLightingZones.isEmpty { items.append("Lighting") }
-        if profile.onboardProfileCount > 1 { items.append("\(profile.onboardProfileCount) profiles") }
+        if !profile.buttonLayout.writableSlots.isEmpty { items.append(L("Buttons")) }
+        if !profile.supportedLightingEffects.isEmpty || !profile.usbLightingLEDIDs.isEmpty || !profile.usbLightingZones.isEmpty { items.append(L("Lighting")) }
+        if profile.onboardProfileCount > 1 { items.append(L("%@ profiles", "\(profile.onboardProfileCount)")) }
         return items.joined(separator: " · ")
     }
 
@@ -278,13 +276,13 @@ private struct EmptyDeviceStatePanel: View {
 
     private var connectHeader: some View { titleText("Connect a device") }
 
-    private func titleText(_ text: String) -> some View { Text(text).font(.system(size: 28, weight: .black, design: .rounded)).foregroundStyle(.white).multilineTextAlignment(.center).frame(maxWidth: .infinity, alignment: .center) }
+    private func titleText(_ text: String) -> some View { Text(L(text)).font(.system(size: 28, weight: .bold)).foregroundStyle(.white).multilineTextAlignment(.center).frame(maxWidth: .infinity, alignment: .center) }
 
     private var supportedDevicesLink: some View {
         VStack(spacing: 4) {
-            Button(action: showSupportedDevices) { Text("Supported devices").font(.system(size: 13, weight: .bold, design: .rounded)).underline() }.buttonStyle(.plain).foregroundStyle(.white).help("Open supported device table")
+            Button(action: showSupportedDevices) { Text("Supported devices").font(.system(size: 13, weight: .bold)).underline() }.buttonStyle(.plain).foregroundStyle(.white).help("Open supported device table")
 
-            Text("\(supportedFamilyCount) models · \(connectionPathCount) connection paths").font(.system(size: 13, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.58)).multilineTextAlignment(.center).frame(maxWidth: .infinity, alignment: .center)
+            Text(L("%@ models · %@ connection paths", "\(supportedFamilyCount)", "\(connectionPathCount)")).font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.58)).multilineTextAlignment(.center).frame(maxWidth: .infinity, alignment: .center)
         }.frame(maxWidth: .infinity, alignment: .center)
     }
 }
@@ -306,8 +304,8 @@ private struct SupportedDevicesTableSheet: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Supported Devices").font(.system(size: 24, weight: .black, design: .rounded)).foregroundStyle(.white)
-                    Text("\(rows.count) connection paths across \(Set(rows.map(\.familyID)).count) device models").font(.system(size: 12, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.62))
+                    Text("Supported Devices").font(.system(size: 24, weight: .bold)).foregroundStyle(.white)
+                    Text(L("%@ connection paths across %@ device models", "\(rows.count)", "\(Set(rows.map(\.familyID)).count)")).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.62))
                 }
 
                 Spacer()
@@ -354,7 +352,7 @@ private struct SupportedDevicesTableContent: View {
         }
     }
 
-    private var emptyRowsView: some View { Text("No supported devices match the current search.").font(.system(size: 13, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.62)).frame(maxWidth: .infinity, minHeight: 260) }
+    private var emptyRowsView: some View { Text("No supported devices match the current search.").font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.62)).frame(maxWidth: .infinity, minHeight: 260) }
 
     private var supportedRowsView: some View {
         ScrollView {
@@ -379,7 +377,7 @@ private struct SupportedDevicesTableHeader: View {
         }.padding(.horizontal, 14).padding(.vertical, 9).frame(maxWidth: .infinity, alignment: .leading).background(Color.white.opacity(0.06))
     }
 
-    private func tableHeader(_ text: String) -> some View { Text(text).font(.system(size: 11, weight: .black, design: .rounded)).foregroundStyle(.white.opacity(0.58)).textCase(.uppercase) }
+    private func tableHeader(_ text: String) -> some View { Text(L(text)).font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.58)).textCase(.uppercase) }
 }
 
 /// Renders the supported devices table row UI.
@@ -388,13 +386,13 @@ private struct SupportedDevicesTableRow: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
-            Text(row.name).font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+            Text(row.name).font(.system(size: 13, weight: .bold)).foregroundStyle(.white).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
 
             Pill(text: row.transport.connectionLabel, color: row.transport == .bluetooth ? Color(hex: 0x66D9FF) : Color(hex: 0xA8F46A), fontSize: 10, horizontalPadding: 8, verticalPadding: 4).frame(width: 108, alignment: .leading)
 
             Text(row.productIDs).font(.system(size: 12, weight: .semibold, design: .monospaced)).foregroundStyle(.white.opacity(0.78)).lineLimit(1).frame(width: 132, alignment: .leading)
 
-            Text(row.capabilities).font(.system(size: 12, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.74)).lineLimit(1).frame(width: 320, alignment: .leading)
+            Text(row.capabilities).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.74)).lineLimit(1).frame(width: 320, alignment: .leading)
         }.padding(.horizontal, 14).padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -464,9 +462,9 @@ private struct StatusNoticeCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.system(size: 14, weight: .black, design: .rounded)).foregroundStyle(.white)
+            Text(L(title)).font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
 
-            Text(message).font(.system(size: 12, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.90))
+            Text(L(message)).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.90))
 
             detailLinesView
 
@@ -480,7 +478,7 @@ private struct StatusNoticeCard: View {
         if !actions.isEmpty {
             HStack(spacing: 8) {
                 ForEach(Array(actions.enumerated()), id: \.offset) { _, action in
-                    if action.isProminent { Button(action.title, action: action.handler).buttonStyle(.borderedProminent).controlSize(.small) } else { Button(action.title, action: action.handler).buttonStyle(.bordered).controlSize(.small) }
+                    if action.isProminent { Button(L(action.title), action: action.handler).buttonStyle(.borderedProminent).controlSize(.small) } else { Button(L(action.title), action: action.handler).buttonStyle(.bordered).controlSize(.small) }
                 }
             }
         }
@@ -491,7 +489,7 @@ private struct StatusNoticeCard: View {
         let fontSize = usesMonospace ? 11.0 : 12.0
         let fontDesign: Font.Design = usesMonospace ? .monospaced : .rounded
 
-        return Text(line).font(.system(size: fontSize, weight: .medium, design: fontDesign)).foregroundStyle(.white.opacity(0.80)).textSelection(.enabled)
+        return Text(L(line)).font(.system(size: fontSize, weight: .medium, design: fontDesign)).foregroundStyle(.white.opacity(0.80)).textSelection(.enabled)
     }
 
     private var cardBackground: some View { RoundedRectangle(cornerRadius: 14).fill(tone.backgroundColor.opacity(0.92)).overlay(RoundedRectangle(cornerRadius: 14).stroke(tone.borderColor.opacity(0.55), lineWidth: 1)) }

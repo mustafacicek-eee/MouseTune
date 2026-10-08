@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): app name shown in the UI changed from OpenSnek to MouseTune; relaunch for a language change.
 import AppKit
 import Foundation
 import OpenSnekAppSupport
@@ -80,7 +81,7 @@ import OpenSnekCore
 
         do {
             let result = try PermissionSupport.resetAllPermissions(bundleIdentifier: runtimeStore.hidAccessStatus.bundleIdentifier)
-            runtimeStore.permissionStatusMessage = "Permissions reset for \(result.bundleIdentifier). Re-enable Input Monitoring, then relaunch OpenSnek."
+            runtimeStore.permissionStatusMessage = "Permissions reset for \(result.bundleIdentifier). Re-enable Input Monitoring, then relaunch MouseTune."
             PermissionSupport.openInputMonitoringSettings()
         } catch { runtimeStore.permissionStatusMessage = "Permission reset failed: \(error.localizedDescription)" }
 
@@ -106,7 +107,7 @@ import OpenSnekCore
             runtimeStore.launchAtStartupEnabled = false
             runtimeStore.permissionStatusMessage = nil
             runtimeStore.serviceStatusMessage = nil
-            runtimeStore.localStorageResetMessage = "Local storage cleared. Relaunch OpenSnek before reconnecting devices."
+            runtimeStore.localStorageResetMessage = "Local storage cleared. Relaunch MouseTune before reconnecting devices."
             transientStatusUntil = nil
             deviceStore.errorMessage = nil
             return true
@@ -429,6 +430,21 @@ import OpenSnekCore
     func terminateServiceProcess() {
         environment.serviceCoordinator.terminateOtherRunningApplicationInstances()
         prepareForCurrentServiceProcessTermination()
+        NSApp.terminate(nil)
+    }
+
+    /// MouseTune fork: quits the app and its menu bar service, then reopens the app so a new interface language is read at launch.
+    /// A small shell helper waits until this process has exited before reopening, otherwise `open` would just reactivate it.
+    func relaunchForLanguageChange() {
+        environment.serviceCoordinator.stopServiceProcess()
+        environment.serviceCoordinator.terminateOtherRunningApplicationInstances()
+        let relauncher = Process()
+        relauncher.executableURL = URL(fileURLWithPath: "/bin/sh")
+        relauncher.arguments = ["-c", "while /bin/kill -0 \"$1\" 2>/dev/null; do /bin/sleep 0.2; done; /usr/bin/open \"$0\"", Bundle.main.bundlePath, "\(ProcessInfo.processInfo.processIdentifier)"]
+        do { try relauncher.run() } catch {
+            AppLog.error("App", "language relaunch failed: \(error.localizedDescription)")
+            return
+        }
         NSApp.terminate(nil)
     }
 

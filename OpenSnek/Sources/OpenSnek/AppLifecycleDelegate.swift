@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): starts the Forward-button double-click service and records the launch language.
 import AppKit
 
 /// Coordinates app lifecycle delegate behavior.
@@ -25,6 +26,8 @@ import AppKit
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
         AppLog.info("App", "launch version=\(version) build=\(build) logLevel=\(AppLog.currentLevel.shortLabel)")
+        ForwardDoubleClickService.shared.start()
+        _ = AppLanguagePreference.atLaunch  // MouseTune fork: remember which language this process started with.
 
         if OpenSnekProcessRole.current.isService { return }
 

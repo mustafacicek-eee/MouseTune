@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): relaunch for a language change.
 import Foundation
 import Observation
 
@@ -65,6 +66,8 @@ import Observation
     func prepareForCurrentServiceProcessTermination() { runtimeController.prepareForCurrentServiceProcessTermination() }
 
     func terminateServiceProcess() { runtimeController.terminateServiceProcess() }
+
+    func relaunchForLanguageChange() { runtimeController.relaunchForLanguageChange() }
 
     func developerTransportSettingsDidChange() { Task { await runtimeController.developerTransportSettingsDidChange() } }
 

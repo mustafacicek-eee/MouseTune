@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): Forward-button double-click toggle added; app name shown in the UI changed from OpenSnek to MouseTune; on-screen text goes through L() for the Turkish translation; MouseTune visual theme (neutral dark, sky-blue accent, SF Pro type).
 import AppKit
 import OpenSnekAppSupport
 import SwiftUI
@@ -44,6 +45,8 @@ struct ButtonMappingTableCard: View {
                     }
                 }
 
+                if deviceStore.visibleButtonSlots.contains(where: { $0.slot == 5 }) { ForwardDoubleClickToggleRow() }
+
                 if !deviceStore.hiddenUnsupportedButtonSlots.isEmpty { UnsupportedButtonsFootnote(entries: deviceStore.hiddenUnsupportedButtonSlots) }
             }
         }
@@ -54,7 +57,7 @@ struct ButtonMappingTableCard: View {
 private struct ButtonGroupHeader: View {
     let title: String
 
-    var body: some View { Text(title.uppercased()).font(.system(size: 11, weight: .black, design: .rounded)).foregroundStyle(.white.opacity(0.42)).tracking(0.6).padding(.top, 4).accessibilityAddTraits(.isHeader) }
+    var body: some View { Text(L(title).uppercased(with: Locale(identifier: Bundle.main.preferredLocalizations.first ?? "en"))).font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.42)).tracking(0.6).padding(.top, 4).accessibilityAddTraits(.isHeader) }
 }
 
 /// Renders the onboard profile pill button UI.
@@ -103,9 +106,9 @@ private struct OnboardProfilePillLabel: View {
 
     @ViewBuilder private var leadingIndicator: some View { if isLoading { ProgressView().controlSize(.small).scaleEffect(0.62).frame(width: 9, height: 9).accessibilityHidden(true) } else { profileDot } }
 
-    private var profileNameText: some View { Text(profileName).font(.system(size: 11, weight: .black, design: .rounded)).foregroundStyle(.white.opacity(0.92)).lineLimit(1).truncationMode(.tail).frame(maxWidth: 128, alignment: .leading) }
+    private var profileNameText: some View { Text(L(profileName)).font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.92)).lineLimit(1).truncationMode(.tail).frame(maxWidth: 128, alignment: .leading) }
 
-    private var chevron: some View { Image(systemName: "chevron.down").font(.system(size: 9, weight: .black)).foregroundStyle(.white.opacity(0.54)).accessibilityHidden(true) }
+    private var chevron: some View { Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold)).foregroundStyle(.white.opacity(0.54)).accessibilityHidden(true) }
 
     private var pillBackground: some View { Capsule().fill(Color.white.opacity(0.08)).overlay(Capsule().stroke(Color.white.opacity(0.18), lineWidth: 1)) }
 
@@ -132,7 +135,7 @@ struct ProfilePickerPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Profiles").font(.system(size: 17, weight: .black, design: .rounded)).foregroundStyle(.white).accessibilityIdentifier("onboard-profiles-card")
+            Text("Profiles").font(.system(size: 17, weight: .bold)).foregroundStyle(.white).accessibilityIdentifier("onboard-profiles-card")
 
             ProfilePickerPanel(editorStore: editorStore)
         }.padding(14).frame(width: 680, alignment: .leading).fixedSize(horizontal: false, vertical: true).background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0x111820)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.16), lineWidth: 1))).task {
@@ -188,15 +191,15 @@ private struct ProfilePickerPanel: View {
     private var loadingRow: some View {
         HStack(spacing: 8) {
             ProgressView().controlSize(.small)
-            Text("Reading onboard profiles").font(.system(size: 11, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.58))
+            Text("Reading onboard profiles").font(.system(size: 11, weight: .medium)).foregroundStyle(.white.opacity(0.58))
         }
     }
 
     private var emptyRefreshState: some View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Profiles unavailable").font(.system(size: 12, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.78))
-                Text(editorStore.onboardProfileRefreshErrorMessage ?? "Profile inventory has not loaded yet.").font(.system(size: 10, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.48)).lineLimit(2)
+                Text("Profiles unavailable").font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.78))
+                Text(L(editorStore.onboardProfileRefreshErrorMessage ?? "Profile inventory has not loaded yet.")).font(.system(size: 10, weight: .medium)).foregroundStyle(.white.opacity(0.48)).lineLimit(2)
             }
             Spacer(minLength: 0)
             Button {
@@ -209,7 +212,7 @@ private struct ProfilePickerPanel: View {
 
     private var profileLayout: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Onboard Profiles").font(.system(size: 11, weight: .black, design: .rounded)).foregroundStyle(.white.opacity(0.74))
+            Text("Onboard Profiles").font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.74))
 
             HStack(alignment: .top, spacing: columnSpacing) {
                 VStack(alignment: .leading, spacing: slotRowSpacing) { ForEach(editorStore.onboardProfileSummaries) { profile in profileSlotRow(profile).frame(width: slotColumnWidth, height: slotRowHeight) } }
@@ -308,7 +311,7 @@ private struct ProfilePickerPanel: View {
     private var baseProfileWarning: some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(Color(hex: 0xFFD166)).frame(width: 14, height: 14)
-            Text("Synapse will overwrite this profile. Save settings to a stored slot if you want to keep them.").font(.system(size: 10, weight: .semibold, design: .rounded)).foregroundStyle(Color(hex: 0xFFD166).opacity(0.92)).frame(maxWidth: .infinity, alignment: .leading).fixedSize(
+            Text("Synapse will overwrite this profile. Save settings to a stored slot if you want to keep them.").font(.system(size: 10, weight: .semibold)).foregroundStyle(Color(hex: 0xFFD166).opacity(0.92)).frame(maxWidth: .infinity, alignment: .leading).fixedSize(
                 horizontal: false, vertical: true)
         }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10).padding(.vertical, 8).background(RoundedRectangle(cornerRadius: 7).fill(Color(hex: 0xFFD166).opacity(0.10))).overlay(RoundedRectangle(cornerRadius: 7).stroke(Color(hex: 0xFFD166).opacity(0.22), lineWidth: 1))
             .accessibilityIdentifier("base-profile-synapse-warning")
@@ -332,7 +335,7 @@ private struct ProfilePickerPanel: View {
 
     private var singleSlotActions: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("On Connect").font(.system(size: 11, weight: .black, design: .rounded)).foregroundStyle(.white.opacity(0.74))
+            Text("On Connect").font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.74))
 
             Picker("On Connect Behavior", selection: connectBehaviorBinding) {
                 Text("Use Mouse Settings").tag(DeviceConnectBehavior.useMouseSettings)
@@ -346,8 +349,7 @@ private struct ProfilePickerPanel: View {
     private var singleSlotSynapseWarning: some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(Color(hex: 0xFFD166)).frame(width: 14, height: 14)
-            Text("Synapse can overwrite this profile when OpenSnek uses mouse settings on connect.").font(.system(size: 10, weight: .semibold, design: .rounded)).foregroundStyle(Color(hex: 0xFFD166).opacity(0.92)).frame(maxWidth: .infinity, alignment: .leading).fixedSize(
-                horizontal: false, vertical: true)
+            Text("Synapse can overwrite this profile when MouseTune uses mouse settings on connect.").font(.system(size: 10, weight: .semibold)).foregroundStyle(Color(hex: 0xFFD166).opacity(0.92)).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
         }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10).padding(.vertical, 8).background(RoundedRectangle(cornerRadius: 7).fill(Color(hex: 0xFFD166).opacity(0.10))).overlay(RoundedRectangle(cornerRadius: 7).stroke(Color(hex: 0xFFD166).opacity(0.22), lineWidth: 1))
             .accessibilityIdentifier("single-slot-synapse-warning")
     }
@@ -395,8 +397,8 @@ private struct OnboardProfileSlotRowButton: View {
             RoundedRectangle(cornerRadius: 2).fill(style.slotColor.opacity(profile.isAssigned || style.isSelected ? 0.95 : 0.45)).frame(width: 4, height: 30)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(profile.isAssigned ? profile.displayName : "None").font(.system(size: 12, weight: .semibold, design: .rounded)).foregroundStyle(Color.white.opacity(style.titleOpacity)).lineLimit(1)
-                Text(profile.profileID == 1 ? "Base" : "Slot \(profile.profileID)").font(.system(size: 10, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(style.subtitleOpacity))
+                Text(L(profile.isAssigned ? profile.displayName : "None")).font(.system(size: 12, weight: .semibold)).foregroundStyle(Color.white.opacity(style.titleOpacity)).lineLimit(1)
+                Text(profile.profileID == 1 ? L("Base") : L("Slot %@", "\(profile.profileID)")).font(.system(size: 10, weight: .medium)).foregroundStyle(.white.opacity(style.subtitleOpacity))
             }.frame(maxWidth: .infinity, alignment: .leading)
 
             Spacer(minLength: 0)
@@ -409,8 +411,7 @@ private struct OnboardProfileSlotRowButton: View {
     }
 
     private var activeBadge: some View {
-        Text("active").font(.system(size: 9, weight: .bold, design: .rounded)).foregroundStyle(Color(hex: 0x30D158)).padding(.horizontal, 6).padding(.vertical, 2).background(Capsule().fill(Color(hex: 0x30D158).opacity(0.14))).accessibilityIdentifier(
-            "onboard-profile-row-\(profile.profileID)-active-badge")
+        Text("active").font(.system(size: 9, weight: .bold)).foregroundStyle(Color(hex: 0x30D158)).padding(.horizontal, 6).padding(.vertical, 2).background(Capsule().fill(Color(hex: 0x30D158).opacity(0.14))).accessibilityIdentifier("onboard-profile-row-\(profile.profileID)-active-badge")
     }
 
     private var rowBorder: some View { RoundedRectangle(cornerRadius: 8).stroke(profile.isActive ? Color(hex: 0x30D158).opacity(0.95) : Color.white.opacity(style.strokeOpacity), lineWidth: profile.isActive ? 2 : 1) }
@@ -452,34 +453,44 @@ private struct ProfileActionPanelShape: Shape {
 /// Stores unsupported buttons footnote data.
 private struct UnsupportedButtonsFootnote: View {
     let entries: [DocumentedButtonSlot]
+    /// MouseTune fork: collapsed by default so the Buttons card stays short; click the header to read the details.
+    @State private var isExpanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            header
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) { isExpanded.toggle() }
+            } label: {
+                header.contentShape(Rectangle())
+            }.buttonStyle(.plain).accessibilityIdentifier("unsupported-buttons-footnote-toggle")
 
-            Text("OpenSnek can still use the rest of the device normally.").font(.system(size: 11, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.60))
+            if isExpanded {
+                Text("MouseTune can still use the rest of the device normally.").font(.system(size: 11, weight: .medium)).foregroundStyle(.white.opacity(0.60))
 
-            unsupportedRows
+                unsupportedRows
+            }
         }.padding(10).frame(maxWidth: .infinity, alignment: .leading).background(footnoteBackground)
     }
 
     private var header: some View {
         HStack(spacing: 8) {
             Image(systemName: "info.circle.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(Color.white.opacity(0.72))
-            Text("Some buttons can't be changed yet").font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.8))
+            Text("Some buttons can't be changed yet").font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.8))
+            Spacer(minLength: 8)
+            Image(systemName: isExpanded ? "chevron.up" : "chevron.down").font(.system(size: 10, weight: .bold)).foregroundStyle(.white.opacity(0.55))
         }
     }
 
     private var unsupportedRows: some View { VStack(alignment: .leading, spacing: 6) { ForEach(entries) { entry in UnsupportedButtonFootnoteRow(entry: entry) } } }
 
-    private var footnoteBackground: some View { RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.035)).overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.08), lineWidth: 1)) }
+    private var footnoteBackground: some View { RoundedRectangle(cornerRadius: 10).fill(MouseTuneTheme.rowFill).overlay(RoundedRectangle(cornerRadius: 10).stroke(MouseTuneTheme.rowStroke, lineWidth: 1)) }
 }
 
 /// Renders the unsupported button footnote row UI.
 private struct UnsupportedButtonFootnoteRow: View {
     let entry: DocumentedButtonSlot
 
-    var body: some View { Text("\(entry.descriptor.friendlyName): \(entry.note ?? entry.access.defaultNotice ?? "Unsupported")").font(.system(size: 11, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.62)).fixedSize(horizontal: false, vertical: true) }
+    var body: some View { Text(verbatim: "\(L(entry.descriptor.friendlyName)): \(L(entry.note ?? entry.access.defaultNotice ?? "Unsupported"))").font(.system(size: 11, weight: .medium)).foregroundStyle(.white.opacity(0.62)).fixedSize(horizontal: false, vertical: true) }
 }
 
 /// Renders the labeled control row UI.
@@ -489,7 +500,7 @@ struct LabeledControlRow<Control: View>: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            Text(title).font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.82))
+            Text(L(title)).font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.82))
 
             Spacer(minLength: 12)
 
@@ -531,7 +542,7 @@ private struct ButtonBindingRow: View {
             dpiClutchSection(profileID: profileID)
             turboSection
             noticeSection
-        }.padding(8).opacity(row.isEditable ? 1.0 : 0.75).background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.04)).overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.08), lineWidth: 1)))
+        }.padding(.horizontal, 12).padding(.vertical, 8).opacity(row.isEditable ? 1.0 : 0.75).background(RoundedRectangle(cornerRadius: 10).fill(MouseTuneTheme.rowFill).overlay(RoundedRectangle(cornerRadius: 10).stroke(MouseTuneTheme.rowStroke, lineWidth: 1)))
     }
 
     @ViewBuilder private var keyboardSection: some View { if row.selectedKind == .keyboardSimple { ButtonBindingKeyboardControls(editorStore: editorStore, row: row) } }
@@ -551,12 +562,12 @@ private struct ButtonBindingHeaderRow: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            Text(row.friendlyName).font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white).accessibilityIdentifier("button-binding-row-\(row.slot)")
+            Text(L(row.friendlyName)).font(.system(size: 13, weight: .bold)).foregroundStyle(.white).accessibilityIdentifier("button-binding-row-\(row.slot)")
 
             Spacer(minLength: 12)
 
             Picker("", selection: Binding(get: { editorStore.buttonBindingKind(for: row.slot) }, set: { editorStore.updateButtonBindingKind(slot: row.slot, kind: $0) })) {
-                ForEach(ButtonBindingSupport.availableButtonBindingKinds(for: row.slot, profileID: profileID)) { kind in Text(kind.label).tag(kind) }
+                ForEach(ButtonBindingSupport.availableButtonBindingKinds(for: row.slot, profileID: profileID)) { kind in Text(L(kind.label)).tag(kind) }
             }.labelsHidden().pickerStyle(.menu).frame(width: 220, alignment: .trailing).disabled(!row.isEditable).accessibilityIdentifier("button-binding-kind-picker-\(row.slot)")
         }
     }
@@ -596,7 +607,7 @@ private struct ButtonBindingDpiClutchControls: View {
         HStack {
             Spacer()
             HStack(spacing: 8) {
-                Text("Clutch DPI").font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.72))
+                Text("Clutch DPI").font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.72))
                 DpiValueField(placeholder: "400", value: editorStore.buttonBindingClutchDPI(for: row.slot), width: 120, alignment: .center, isDisabled: !row.isEditable, accessibilityIdentifier: "button-binding-clutch-dpi-field-\(row.slot)") { parsed in
                     editorStore.updateButtonBindingClutchDPI(slot: row.slot, dpi: parsed)
                 }
@@ -607,11 +618,11 @@ private struct ButtonBindingDpiClutchControls: View {
     private var clutchSliderRow: some View {
         HStack(spacing: 8) {
             Spacer()
-            Text("100").font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.62))
+            Text("100").font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.62))
 
             clutchSlider
 
-            Text("\(dpiRange.upperBound)").font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.62))
+            Text("\(dpiRange.upperBound)").font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.62))
 
             Text("\(row.clutchDPI)").font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundStyle(.white.opacity(0.76)).frame(width: 56, alignment: .trailing)
         }
@@ -650,21 +661,22 @@ private struct ButtonBindingTurboControls: View {
     }
 
     private var turboToggle: some View {
-        Toggle("Turbo", isOn: Binding(get: { editorStore.buttonBindingTurboEnabled(for: row.slot) }, set: { editorStore.updateButtonBindingTurboEnabled(slot: row.slot, enabled: $0) })).toggleStyle(.switch).font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.76))
-            .disabled(!row.isEditable).accessibilityIdentifier("button-binding-turbo-toggle-\(row.slot)")
+        Toggle("Turbo", isOn: Binding(get: { editorStore.buttonBindingTurboEnabled(for: row.slot) }, set: { editorStore.updateButtonBindingTurboEnabled(slot: row.slot, enabled: $0) })).toggleStyle(.switch).font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.76)).disabled(
+            !row.isEditable
+        ).accessibilityIdentifier("button-binding-turbo-toggle-\(row.slot)")
     }
 
     private var turboRateControls: some View {
         HStack(spacing: 8) {
             Spacer()
-            Text("Slow").font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.62))
+            Text("Slow").font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.62))
 
             Slider(value: Binding(get: { Double(editorStore.buttonBindingTurboRatePressesPerSecond(for: row.slot)) }, set: { editorStore.updateButtonBindingTurboPressesPerSecond(slot: row.slot, pressesPerSecond: Int(round($0))) }), in: 1...20).frame(width: 140).disabled(!row.isEditable)
                 .accessibilityIdentifier("button-binding-turbo-rate-slider-\(row.slot)")
 
-            Text("Fast").font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.62))
+            Text("Fast").font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.62))
 
-            Text("\(row.turboRatePressesPerSecond)/s").font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundStyle(.white.opacity(0.78)).frame(width: 54, alignment: .trailing)
+            Text(L("%@/s", "\(row.turboRatePressesPerSecond)")).font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundStyle(.white.opacity(0.78)).frame(width: 54, alignment: .trailing)
         }
     }
 }
@@ -676,7 +688,7 @@ private struct ButtonBindingNoticeRow: View {
     var body: some View {
         HStack {
             Spacer()
-            Text(notice).font(.system(size: 11, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.58))
+            Text(L(notice)).font(.system(size: 11, weight: .medium)).foregroundStyle(.white.opacity(0.58))
         }
     }
 }

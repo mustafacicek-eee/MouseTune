@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): service log files live under ~/Library/Logs/MouseTune.
 import AppKit
 import Darwin
 import Foundation
@@ -283,7 +284,7 @@ import Network
     nonisolated static func launchAgentPropertyList(executablePath: String, workingDirectoryPath: String) -> [String: Any] {
         [
             "Label": "io.opensnek.OpenSnek.service", "ProgramArguments": [executablePath, "--service-mode", "--login-start"], "RunAtLoad": true, "KeepAlive": false, "WorkingDirectory": workingDirectoryPath,
-            "StandardOutPath": ("~/Library/Logs/OpenSnek/service.stdout.log" as NSString).expandingTildeInPath, "StandardErrorPath": ("~/Library/Logs/OpenSnek/service.stderr.log" as NSString).expandingTildeInPath
+            "StandardOutPath": ("~/Library/Logs/MouseTune/service.stdout.log" as NSString).expandingTildeInPath, "StandardErrorPath": ("~/Library/Logs/MouseTune/service.stderr.log" as NSString).expandingTildeInPath
         ]
     }
 }

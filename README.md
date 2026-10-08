@@ -1,6 +1,76 @@
+<!-- MouseTune fork -->
 <p align="center">
-  <img src="OpenSnek/App/Resources/Assets.xcassets/AppIcon.appiconset/icon_512x512@2x.png" alt="open-snek app icon" width="200">
+  <img src="OpenSnek/App/Resources/Assets.xcassets/AppIcon.appiconset/icon_512x512@2x.png" alt="MouseTune app icon" width="160">
 </p>
+
+<h1 align="center">MouseTune</h1>
+
+<p align="center">
+  A personal fork of <a href="https://github.com/gh123man/OpenSnek">OpenSnek</a> by gh123man and the OpenSnek contributors.
+</p>
+
+> **This is a fork, not an original project.** Almost all of the code, protocol research and device support comes from
+> [OpenSnek](https://github.com/gh123man/OpenSnek). This fork only adds the changes listed below. If you want the
+> maintained app, use upstream OpenSnek.
+
+![MouseTune main window](docs/media/mousetune-main-en.png)
+
+<details>
+<summary>Turkish interface</summary>
+
+![MouseTune main window in Turkish](docs/media/mousetune-main-tr.png)
+
+</details>
+
+## What this fork changes
+
+- **Bluetooth battery fix (Basilisk V3 X HyperSpeed):** the vendor battery value is always read on a 0-255 scale over
+  Bluetooth. Upstream treated raw values up to 100 as a percentage, so a raw `0x52` (82) showed 82% instead of 32%.
+  Covered by tests in `BridgeClientBluetoothFallbackTests`.
+- **Battery history and forecast:** battery readings are stored locally and used to estimate the days of battery left,
+  shown under the battery percentage and in the menu bar (`BatteryHistory.swift`, `BatteryForecastLabel.swift`).
+- **Forward button double-click:** optional toggle that turns the Forward button into a left double-click using a
+  macOS event tap; needs Accessibility permission (`ForwardDoubleClick.swift`).
+- **Name and icon:** the app is shown as "MouseTune" with its own icon, and logs go to `~/Library/Logs/MouseTune`.
+  Update checks are disabled because this fork has no release feed.
+- **Layout tweaks:** no device sidebar (the device name in the header switches devices when more than one is
+  connected, and the settings gear sits top-right), compact one-line DPI stages, cards that fill the shorter column,
+  a compact single-page Settings window, Diagnostics next to the connection status, and the "some buttons can't be
+  changed yet" note collapsed by default.
+- **Turkish interface:** on-screen text is translated through `OpenSnekCore/Localization.swift` and
+  `App/Resources/tr.lproj`. Settings > Language switches between System, Türkçe and English (applies after
+  reopening the app). Low-level device error messages and diagnostics stay in English.
+- **Local build script:** `build_mousetune.sh` builds and installs `MouseTune.app`.
+
+Every modified upstream file carries a "Modified in the MouseTune fork" note at the top.
+
+## Building
+
+Requires macOS 14 or later and Xcode. From the repository root:
+
+```bash
+./build_mousetune.sh
+```
+
+The script builds an ad-hoc signed `MouseTune.app`, installs it to `/Applications` and opens it. It replaces an
+existing `/Applications/MouseTune.app`.
+
+## License and attribution
+
+Licensed under the [Apache License 2.0](LICENSE), the same license as upstream. Original work: Copyright 2026 OpenSnek
+contributors. Changes in this fork: Copyright 2026 mustafacicek-eee.
+
+## Trademarks
+
+MouseTune is an independent project. It is not affiliated with, endorsed by or sponsored by Razer or by the OpenSnek
+project. Razer, Basilisk, Synapse and other product names are trademarks of their respective owners and are used here
+only to identify compatible hardware.
+
+---
+
+# Upstream OpenSnek README
+
+The text below is the original OpenSnek README, kept for reference. Links and download buttons point to upstream.
 
 <h1 align="center">OpenSnek</h1>
 

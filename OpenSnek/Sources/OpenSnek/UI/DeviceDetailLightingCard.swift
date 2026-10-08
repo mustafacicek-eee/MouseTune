@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): app name shown in the UI changed from OpenSnek to MouseTune; on-screen text goes through L() for the Turkish translation; MouseTune visual theme (neutral dark, sky-blue accent, SF Pro type).
 import AppKit
 import OpenSnekAppSupport
 import SwiftUI
@@ -28,7 +29,7 @@ struct LightingCard: View {
 
     private var accentBase: Color { Color(rgb: editorStore.editableColor) }
 
-    private var actionAccent: Color { Color(hex: 0x0A84FF) }
+    private var actionAccent: Color { MouseTuneTheme.accent }
 
     private var preferredLightingTab: LightingCardTab { editorStore.editableSoftwareLightingApplyOnConnect && selected.supportsSoftwareLightingEffects ? .advanced : .onboard }
 
@@ -38,7 +39,7 @@ struct LightingCard: View {
 
     private var accentOpacity: Double {
         let brightness = Double(max(0, min(255, editorStore.editableLedBrightness))) / 255.0
-        return 0.10 + (brightness * 0.22)
+        return 0.06 + (brightness * 0.14)
     }
 
     private var showsStaticLightingZoneControls: Bool { editorStore.editableLightingEffect == .staticColor && editorStore.visibleUSBLightingZones.count > 1 }
@@ -115,7 +116,7 @@ struct LightingCard: View {
     private var advancedStatusText: String? {
         guard let status = softwareLightingStatus else { return nil }
         switch status.state {
-        case .running: return "Running \(status.request?.presetID.label ?? "effect")"
+        case .running: return L("Running %@", L(status.request?.presetID.label ?? "effect"))
         case .suspended, .failed: return status.message
         case .stopped: return nil
         }
@@ -123,14 +124,14 @@ struct LightingCard: View {
 
     private var tabSelection: Binding<LightingCardTab> { Binding(get: { selectedTab }, set: { selectedTab = availableTabs.contains($0) ? $0 : .onboard }) }
 
-    @ViewBuilder private func tabPicker() -> some View { if availableTabs.count > 1 { Picker("", selection: tabSelection) { ForEach(availableTabs) { tab in Text(tab.label).tag(tab) } }.labelsHidden().pickerStyle(.segmented).accessibilityIdentifier("lighting-card-tab-picker") } }
+    @ViewBuilder private func tabPicker() -> some View { if availableTabs.count > 1 { Picker("", selection: tabSelection) { ForEach(availableTabs) { tab in Text(L(tab.label)).tag(tab) } }.labelsHidden().pickerStyle(.segmented).accessibilityIdentifier("lighting-card-tab-picker") } }
 
     @ViewBuilder private func brightnessControls() -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Brightness").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.82))
+                Text("Brightness").font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.82))
                 Spacer()
-                Text("\(brightnessPercent)%").font(.system(size: 13, weight: .black, design: .monospaced)).foregroundStyle(.white)
+                Text("\(brightnessPercent)%").font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(.white)
             }
 
             Slider(
@@ -148,7 +149,7 @@ struct LightingCard: View {
     @ViewBuilder private func onboardPresetPicker() -> some View {
         if selected.supports_advanced_lighting_effects {
             HStack {
-                Text("Preset").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.82))
+                Text("Preset").font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.82))
                 Spacer()
                 Picker(
                     "",
@@ -158,7 +159,7 @@ struct LightingCard: View {
                             editorStore.updateLightingEffect($0)
                             editorStore.scheduleAutoApplyLightingEffect()
                         })
-                ) { ForEach(editorStore.visibleLightingEffects) { kind in Text(kind.label).tag(kind) } }.labelsHidden().pickerStyle(.menu).frame(width: 220, alignment: .trailing).accessibilityIdentifier("lighting-effect-picker")
+                ) { ForEach(editorStore.visibleLightingEffects) { kind in Text(L(kind.label)).tag(kind) } }.labelsHidden().pickerStyle(.menu).frame(width: 220, alignment: .trailing).accessibilityIdentifier("lighting-effect-picker")
             }
         }
     }
@@ -166,7 +167,7 @@ struct LightingCard: View {
     @ViewBuilder private func onboardEffectOptions() -> some View {
         if editorStore.editableLightingEffect.usesWaveDirection {
             HStack {
-                Text("Direction").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.82))
+                Text("Direction").font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.82))
                 Spacer()
                 Picker(
                     "Direction",
@@ -185,7 +186,7 @@ struct LightingCard: View {
 
         if editorStore.editableLightingEffect.usesReactiveSpeed {
             HStack {
-                Text("Speed").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.82))
+                Text("Speed").font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.82))
                 Spacer()
                 Picker(
                     "Speed",
@@ -256,9 +257,9 @@ struct LightingCard: View {
             VStack(alignment: .leading, spacing: 10) {
                 if showsStaticLightingZoneControls {
                     HStack(spacing: 12) {
-                        Text("Zones").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.82))
+                        Text("Zones").font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.82))
                         Spacer(minLength: 8)
-                        Picker("", selection: Binding(get: { onboardZoneMode }, set: { onboardZoneMode = $0 })) { ForEach(LightingZoneEditMode.allCases) { mode in Text(mode.label).tag(mode) } }.labelsHidden().pickerStyle(.segmented).frame(width: 220).accessibilityIdentifier(
+                        Picker("", selection: Binding(get: { onboardZoneMode }, set: { onboardZoneMode = $0 })) { ForEach(LightingZoneEditMode.allCases) { mode in Text(L(mode.label)).tag(mode) } }.labelsHidden().pickerStyle(.segmented).frame(width: 220).accessibilityIdentifier(
                             "lighting-zone-mode-picker")
                     }
                 }
@@ -291,13 +292,13 @@ struct LightingCard: View {
             lightingSummaryRow()
 
             if isExpanded {
-                Rectangle().fill(Color.white.opacity(0.12)).frame(height: 1).padding(.vertical, 2)
+                Rectangle().fill(MouseTuneTheme.divider).frame(height: 1).padding(.vertical, 2)
 
                 tabPicker()
 
                 if activeTab == .advanced { advancedLightingControls() } else { onboardControls() }
             }
-        }.background(RoundedRectangle(cornerRadius: 14).fill(LinearGradient(colors: lightingCardGradientColors, startPoint: .topLeading, endPoint: .bottomTrailing))).onAppear { selectedTab = preferredLightingTab }.onChange(of: selected.id) {
+        }.background(RoundedRectangle(cornerRadius: MouseTuneTheme.cardRadius).fill(LinearGradient(colors: lightingCardGradientColors, startPoint: .topLeading, endPoint: .bottomTrailing))).onAppear { selectedTab = preferredLightingTab }.onChange(of: selected.id) {
             selectedTab = preferredLightingTab
             isExpanded = false
         }.onChange(of: editorStore.editableSoftwareLightingApplyOnConnect) { _, enabled in if enabled && selected.supportsSoftwareLightingEffects { selectedTab = .advanced } }
@@ -305,7 +306,7 @@ struct LightingCard: View {
 
     private func lightingSummaryRow() -> some View {
         HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 5) { Text(lightingSummaryTitle).font(.system(size: 14, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.88)).lineLimit(1).accessibilityIdentifier("lighting-card-summary-text") }
+            VStack(alignment: .leading, spacing: 5) { Text(L(lightingSummaryTitle)).font(.system(size: 14, weight: .bold)).foregroundStyle(.white.opacity(0.88)).lineLimit(1).accessibilityIdentifier("lighting-card-summary-text") }
 
             Spacer(minLength: 10)
 
@@ -320,7 +321,7 @@ struct LightingCard: View {
             Button {
                 withAnimation(.easeInOut(duration: 0.16)) { isExpanded.toggle() }
             } label: {
-                Label(isExpanded ? "Collapse" : "Expand", systemImage: isExpanded ? "chevron.up" : "chevron.down")
+                Label(L(isExpanded ? "Collapse" : "Expand"), systemImage: isExpanded ? "chevron.up" : "chevron.down")
             }.buttonStyle(.bordered).controlSize(.small).accessibilityIdentifier("lighting-card-expand-button")
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -328,14 +329,14 @@ struct LightingCard: View {
     @ViewBuilder private func advancedLightingControls() -> some View {
         if selected.supportsSoftwareLightingEffects {
             VStack(alignment: .leading, spacing: 10) {
-                lightingNotice(systemImage: "bolt.horizontal.circle.fill", iconColor: actionAccent, text: "Advanced effects run only while OpenSnek is running.")
+                lightingNotice(systemImage: "bolt.horizontal.circle.fill", iconColor: actionAccent, text: "Advanced effects run only while MouseTune is running.")
 
                 HStack(spacing: 12) {
-                    Text("Preset").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.82))
+                    Text("Preset").font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.82))
 
                     Spacer(minLength: 12)
 
-                    Picker("", selection: Binding(get: { editorStore.editableSoftwareLightingPreset }, set: { editorStore.updateEditableSoftwareLightingPreset($0) })) { ForEach(editorStore.visibleSoftwareLightingPresets) { preset in Text(preset.label).tag(preset) } }.labelsHidden().pickerStyle(
+                    Picker("", selection: Binding(get: { editorStore.editableSoftwareLightingPreset }, set: { editorStore.updateEditableSoftwareLightingPreset($0) })) { ForEach(editorStore.visibleSoftwareLightingPresets) { preset in Text(L(preset.label)).tag(preset) } }.labelsHidden().pickerStyle(
                         .menu
                     ).frame(width: 190, alignment: .trailing).accessibilityIdentifier("software-lighting-preset-picker")
                 }
@@ -351,7 +352,7 @@ struct LightingCard: View {
                         onReset: { editorStore.resetEditableSoftwareLightingPalette(for: editorStore.editableSoftwareLightingPreset) })
                 }
 
-                if let advancedStatusText { Text(advancedStatusText).font(.system(size: 11, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.58)).lineLimit(2).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("software-lighting-status-text") }
+                if let advancedStatusText { Text(L(advancedStatusText)).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.58)).lineLimit(2).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("software-lighting-status-text") }
 
                 softwareLightingActionRow()
             }
@@ -381,7 +382,7 @@ struct LightingCard: View {
     }
 
     private func softwareLightingApplyOnConnectToggle() -> some View {
-        Toggle(isOn: Binding(get: { editorStore.editableSoftwareLightingApplyOnConnect }, set: { editorStore.updateSoftwareLightingApplyOnConnect($0) })) { Text("Apply on connect").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.82)) }.toggleStyle(.checkbox)
+        Toggle(isOn: Binding(get: { editorStore.editableSoftwareLightingApplyOnConnect }, set: { editorStore.updateSoftwareLightingApplyOnConnect($0) })) { Text("Apply on connect").font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.82)) }.toggleStyle(.checkbox)
             .accessibilityIdentifier("software-lighting-apply-on-connect-checkbox")
     }
 
@@ -389,16 +390,16 @@ struct LightingCard: View {
         HStack(spacing: 8) {
             Image(systemName: systemImage).font(.system(size: 15, weight: .semibold)).foregroundStyle(iconColor)
 
-            Text(text).font(.system(size: 12, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.68)).fixedSize(horizontal: false, vertical: true)
+            Text(L(text)).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.68)).fixedSize(horizontal: false, vertical: true)
         }
     }
 
     private func softwareLightingSpeedControl() -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Speed").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.82))
+                Text("Speed").font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.82))
                 Spacer()
-                Text(editorStore.editableSoftwareLightingSpeed <= 0.001 ? "Static" : "\(Int(round(editorStore.editableSoftwareLightingSpeed * 100)))%").font(.system(size: 13, weight: .black, design: .monospaced)).foregroundStyle(.white)
+                Text(editorStore.editableSoftwareLightingSpeed <= 0.001 ? L("Static") : "\(Int(round(editorStore.editableSoftwareLightingSpeed * 100)))%").font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(.white)
             }
 
             Slider(value: Binding(get: { editorStore.editableSoftwareLightingSpeed * 100.0 }, set: { editorStore.editableSoftwareLightingSpeed = max(0.0, min(2.0, $0 / 100.0)) }), in: 0...200).tint(.white).accessibilityIdentifier("software-lighting-speed-slider")
@@ -408,9 +409,9 @@ struct LightingCard: View {
     private func softwareLightingBrightnessControl() -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Brightness").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.82))
+                Text("Brightness").font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.82))
                 Spacer()
-                Text("\(Int(round(editorStore.editableSoftwareLightingBrightness * 100)))%").font(.system(size: 13, weight: .black, design: .monospaced)).foregroundStyle(.white)
+                Text("\(Int(round(editorStore.editableSoftwareLightingBrightness * 100)))%").font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(.white)
             }
 
             Slider(value: Binding(get: { editorStore.editableSoftwareLightingBrightness * 100.0 }, set: { editorStore.editableSoftwareLightingBrightness = max(0.0, min(1.0, $0 / 100.0)) }), in: 0...100).tint(.white).accessibilityIdentifier("software-lighting-brightness-slider")
@@ -448,7 +449,7 @@ struct LightingSummaryPresentation: Equatable {
             return LightingSummaryPresentation(title: preset.label, swatches: condensedSwatches(from: palette, fallback: input.fallbackColor), batteryIcon: nil)
         }
 
-        return LightingSummaryPresentation(title: "Onboard \(input.onboardEffectLabel)", swatches: condensedSwatches(from: input.onboardColors, fallback: input.fallbackColor), batteryIcon: nil)
+        return LightingSummaryPresentation(title: L("Onboard %@", L(input.onboardEffectLabel)), swatches: condensedSwatches(from: input.onboardColors, fallback: input.fallbackColor), batteryIcon: nil)
     }
 
     private static func batteryIcon(for state: MouseState?) -> BatteryIconPresentation {

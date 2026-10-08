@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): battery forecast label added; app name shown in the UI changed from OpenSnek to MouseTune; on-screen text goes through L() for the Turkish translation; Diagnostics button moved into the header row; MouseTune visual theme (neutral dark, sky-blue accent, SF Pro type); cards fill the shorter column; device switcher and settings gear in the header.
 import AppKit
 import OpenSnekAppSupport
 import SwiftUI
@@ -12,7 +13,8 @@ struct DeviceDetailView: View {
     private let cardSpacing: CGFloat = 14
     private let detailTwoColumnMinWidth: CGFloat = 360
     private let twoColumnBreakpointPadding: CGFloat = 100
-    private let detailCardMaxWidth: CGFloat = 560
+    // MouseTune fork: cards fill the content width so the grid lines up with the header now that there is no sidebar.
+    private let detailCardMaxWidth: CGFloat = 700
     private let detailContentMaxWidth: CGFloat = 1400
     private let horizontalPadding: CGFloat = 20
     private let verticalPadding: CGFloat = 18
@@ -33,7 +35,6 @@ struct DeviceDetailView: View {
         VStack(alignment: .leading, spacing: 18) {
             DeviceOverviewBar(deviceStore: deviceStore, editorStore: editorStore, selected: selected, state: state)
             detailColumns
-            DiagnosticsFooter(deviceStore: deviceStore, device: selected, state: state)
         }.frame(width: width, alignment: .leading).padding(.horizontal, horizontalPadding).padding(.vertical, verticalPadding).frame(maxWidth: .infinity, alignment: .top)
     }
 
@@ -46,15 +47,16 @@ struct DeviceDetailView: View {
     }
 
     private var detailSections: [DetailSection] {
+        // MouseTune fork: the pinned cards (DPI left; Lighting and Buttons right) come first, the rest then fill the shorter column.
         var sections: [DetailSection] = []
         if state.capabilities.dpi_stages { sections.append(.dpiStages) }
-        if editorStore.showsConnectBehaviorCard { sections.append(.onConnect) }
         if selected.showsLightingControls, state.capabilities.lighting { sections.append(.lighting) }
+        if state.capabilities.button_remap { sections.append(.buttonRemap) }
+        if editorStore.showsConnectBehaviorCard { sections.append(.onConnect) }
         if state.capabilities.power_management { sections.append(.powerManagement) }
         if selected.transport != .bluetooth, state.capabilities.poll_rate { sections.append(.pollRate) }
         if selected.transport != .bluetooth, state.low_battery_threshold_raw != nil { sections.append(.lowBatteryThreshold) }
         if selected.transport != .bluetooth, state.scroll_mode != nil || state.scroll_acceleration != nil || state.scroll_smart_reel != nil { sections.append(.scrollControls) }
-        if state.capabilities.button_remap { sections.append(.buttonRemap) }
         return sections
     }
 
@@ -75,8 +77,9 @@ struct DeviceDetailView: View {
 
     private func preferredColumn(for section: DetailSection) -> Int {
         switch section {
+        case .dpiStages: return 0
         case .lighting, .buttonRemap: return 1
-        default: return 0
+        default: return -1
         }
     }
 }
@@ -152,13 +155,12 @@ private struct DetailColumnsLayout: Layout {
         let contentWidth = (nominalColumnWidth * 2) + spacing
         let originX = max((totalWidth - contentWidth) / 2, 0)
         var columnHeights: [CGFloat] = [0, 0]
-        var balancedColumn = 0
         var frames: [CGRect] = Array(repeating: .zero, count: subviews.count)
 
         for (index, subview) in subviews.enumerated() {
             let preferredColumn = subview[PreferredDetailColumnLayoutKey.self]
-            let column = preferredColumn == 0 || preferredColumn == 1 ? preferredColumn : balancedColumn
-            if preferredColumn != 0 && preferredColumn != 1 { balancedColumn = (balancedColumn + 1) % 2 }
+            // MouseTune fork: cards without a fixed column go to whichever column is currently shorter.
+            let column = preferredColumn == 0 || preferredColumn == 1 ? preferredColumn : (columnHeights[0] <= columnHeights[1] ? 0 : 1)
 
             let cardMaxWidth = min(subview[DetailCardMaxWidthLayoutKey.self], nominalColumnWidth)
             let proposedWidth = min(nominalColumnWidth, cardMaxWidth)
@@ -185,7 +187,7 @@ struct DeviceOverviewBar: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(selected.product_name).font(.system(size: 32, weight: .black, design: .rounded)).foregroundStyle(.white).accessibilityIdentifier("selected-device-name").accessibilityLabel(selected.product_name)
+                    DeviceTitleSwitcher(deviceStore: deviceStore, selected: selected)
                     if showsUnsupportedUSBMarker { UnsupportedUSBInlineBanner() }
                 }
 
@@ -197,18 +199,23 @@ struct DeviceOverviewBar: View {
                         HStack(spacing: 8) {
                             Image(systemName: batteryIcon.symbolName, variableValue: batteryIcon.variableValue)
                             Text("\(battery)%")
-                        }.font(.system(size: 24, weight: .black, design: .rounded)).foregroundStyle(batteryIcon.accent == .low ? BatteryPresentation.lowBatteryColor : .white)
+                        }.font(.system(size: 24, weight: .bold)).foregroundStyle(batteryIcon.accent == .low ? BatteryPresentation.lowBatteryColor : .white)
+                        BatteryForecastLabel(deviceID: selected.id, currentPercent: battery)
                     }
                 }
+
+                SettingsGearButton().padding(.leading, 12)
             }
 
             HStack(spacing: 10) {
-                Pill(text: state.connection, color: selected.transport == .bluetooth ? Color(hex: 0x66D9FF) : Color(hex: 0xA8F46A)).accessibilityIdentifier("selected-device-connection")
+                Pill(text: state.connection, color: selected.transport == .bluetooth ? MouseTuneTheme.accent : Color(hex: 0x34D399)).accessibilityIdentifier("selected-device-connection")
                 DeviceStatusBadge(indicator: deviceStore.currentDeviceStatusIndicator, helpText: deviceStore.currentDeviceConnectionTooltip)
+                // MouseTune fork: diagnostics sits with the connection status instead of a footer under the cards.
+                DeviceDiagnosticsButton(deviceStore: deviceStore, device: selected, state: state)
 
                 if editorStore.supportsProfilePicker {
                     Spacer(minLength: 12)
-                    Text("Profile").font(.system(size: 10, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.50))
+                    Text("Profile").font(.system(size: 10, weight: .bold)).foregroundStyle(.white.opacity(0.50))
                     OnboardProfilePillButton(editorStore: editorStore) { isProfilePickerPresented.toggle() }.popover(isPresented: $isProfilePickerPresented, attachmentAnchor: .rect(.bounds), arrowEdge: .top) { ProfilePickerPopover(editorStore: editorStore) }
                 }
             }
@@ -235,9 +242,9 @@ struct GenericDeviceDetailView: View {
 
                 if resolvedProfile == nil {
                     Card(title: "Limited Support") {
-                        Text(primaryMessage).font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.88)).frame(maxWidth: .infinity, alignment: .leading)
+                        Text(L(primaryMessage)).font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.88)).frame(maxWidth: .infinity, alignment: .leading)
 
-                        Text(secondaryMessage).hintTextStyle().frame(maxWidth: .infinity, alignment: .leading)
+                        Text(L(secondaryMessage)).hintTextStyle().frame(maxWidth: .infinity, alignment: .leading)
 
                         VStack(alignment: .leading, spacing: 6) {
                             diagnosticRow(label: "Vendor ID", value: String(format: "0x%04X", selected.vendor_id))
@@ -258,11 +265,11 @@ struct GenericDeviceDetailView: View {
 
     private var primaryMessage: String { "This mouse is not fully supported yet." }
 
-    private var secondaryMessage: String { "OpenSnek will show the controls it can verify safely. Use Diagnostics in bug reports so unsupported devices are easier to map." }
+    private var secondaryMessage: String { "MouseTune will show the controls it can verify safely. Use Diagnostics in bug reports so unsupported devices are easier to map." }
 
     @ViewBuilder private func diagnosticRow(label: String, value: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(label).font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.68)).frame(width: 110, alignment: .leading)
+            Text(L(label)).font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.68)).frame(width: 110, alignment: .leading)
             Text(value).font(.system(size: 12, weight: .medium, design: .monospaced)).foregroundStyle(.white.opacity(0.82)).textSelection(.enabled)
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -279,9 +286,9 @@ struct DeviceUnavailableDetailView: View {
                 GenericDeviceOverviewBar(deviceStore: deviceStore, selected: selected)
 
                 Card(title: deviceStore.currentDeviceStatusIndicator.label) {
-                    Text(deviceStore.selectedDeviceInteractionMessage ?? "Live telemetry is unavailable for this device right now.").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.88)).frame(maxWidth: .infinity, alignment: .leading)
+                    Text(L(deviceStore.selectedDeviceInteractionMessage ?? "Live telemetry is unavailable for this device right now.")).font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.88)).frame(maxWidth: .infinity, alignment: .leading)
 
-                    Text("The controls stay locked until the device reconnects and OpenSnek is receiving live updates again.").hintTextStyle().frame(maxWidth: .infinity, alignment: .leading)
+                    Text("The controls stay locked until the device reconnects and MouseTune is receiving live updates again.").hintTextStyle().frame(maxWidth: .infinity, alignment: .leading)
 
                     VStack(alignment: .leading, spacing: 6) { ForEach(deviceStore.diagnosticsConnectionLines(for: selected), id: \.self) { line in Text(line).font(.system(size: 12, weight: .medium, design: .monospaced)).foregroundStyle(.white.opacity(0.78)) } }.padding(.top, 2)
                 }
@@ -311,8 +318,8 @@ struct DeviceConnectingDetailView: View {
 
     private var headline: String {
         switch selected.transport {
-        case .bluetooth: "Connecting to \(selected.product_name)"
-        case .usb: "Loading \(selected.product_name)"
+        case .bluetooth: L("Connecting to %@", selected.product_name)
+        case .usb: L("Loading %@", selected.product_name)
         }
     }
 
@@ -342,9 +349,9 @@ private struct DeviceConnectionLoadingContent: View {
             ProgressView().controlSize(.large).tint(.white.opacity(0.92))
 
             VStack(spacing: 8) {
-                Text(headline).font(.system(size: 24, weight: .black, design: .rounded)).foregroundStyle(.white)
+                Text(headline).font(.system(size: 24, weight: .bold)).foregroundStyle(.white)
 
-                Text(subtitle).font(.system(size: 13, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.68)).multilineTextAlignment(.center).frame(maxWidth: 320)
+                Text(L(subtitle)).font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.68)).multilineTextAlignment(.center).frame(maxWidth: 320)
             }
         }
     }
@@ -362,15 +369,17 @@ struct GenericDeviceOverviewBar: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(selected.product_name).font(.system(size: 32, weight: .black, design: .rounded)).foregroundStyle(.white)
+                    DeviceTitleSwitcher(deviceStore: deviceStore, selected: selected)
                     if showsUnsupportedUSBMarker { UnsupportedUSBInlineBanner() }
                 }
 
                 Spacer()
+
+                SettingsGearButton()
             }
 
             HStack(spacing: 10) {
-                Pill(text: selected.connectionLabel, color: selected.transport == .bluetooth ? Color(hex: 0x66D9FF) : Color(hex: 0xA8F46A))
+                Pill(text: selected.connectionLabel, color: selected.transport == .bluetooth ? MouseTuneTheme.accent : Color(hex: 0x34D399))
                 DeviceStatusBadge(indicator: deviceStore.currentDeviceStatusIndicator, helpText: deviceStore.currentDeviceConnectionTooltip)
             }
 
@@ -386,7 +395,7 @@ private struct UnsupportedUSBInlineBanner: View {
     var body: some View {
         HStack(spacing: 8) {
             Text("⚠️").font(.system(size: 12))
-            Text("Unsupported USB device. Only verified controls are shown.").font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.88)).lineLimit(2)
+            Text("Unsupported USB device. Only verified controls are shown.").font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.88)).lineLimit(2)
         }.padding(.horizontal, 10).padding(.vertical, 6).background(Capsule().fill(Color(hex: 0xFF9F0A).opacity(0.18)).overlay(Capsule().stroke(Color(hex: 0xFF9F0A).opacity(0.42), lineWidth: 1))).fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -426,7 +435,7 @@ private struct DeviceStatusBadgeContent: View {
         HStack(spacing: 8) {
             Circle().fill(indicator.color).frame(width: 9, height: 9).shadow(color: indicator.color.opacity(0.45), radius: 6, y: 0)
 
-            Text(indicator.label).font(.system(size: 11, weight: .black, design: .rounded)).foregroundStyle(.white.opacity(0.82)).accessibilityIdentifier("device-status-label").accessibilityLabel(indicator.label)
+            Text(L(indicator.label)).font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.82)).accessibilityIdentifier("device-status-label").accessibilityLabel(indicator.label)
         }
     }
 }
@@ -442,8 +451,12 @@ struct DeviceDiagnosticsButton: View {
         Button {
             showsDiagnostics = true
         } label: {
-            Label("Diagnostics", systemImage: "doc.text.magnifyingglass").font(.system(size: 11, weight: .black, design: .rounded))
-        }.buttonStyle(.bordered).controlSize(.small).tint(.white.opacity(0.2)).sheet(isPresented: $showsDiagnostics) { DeviceDiagnosticsSheet(deviceStore: deviceStore, device: device, state: state) }
+            // MouseTune fork: same capsule look as the connection status badge next to it.
+            HStack(spacing: 6) {
+                Image(systemName: "doc.text.magnifyingglass").font(.system(size: 10, weight: .bold))
+                Text("Diagnostics").font(.system(size: 11, weight: .bold))
+            }.foregroundStyle(.white.opacity(0.82)).padding(.horizontal, 10).padding(.vertical, 6).background(Capsule().fill(Color.white.opacity(0.06)).overlay(Capsule().stroke(Color.white.opacity(0.10), lineWidth: 1))).contentShape(Capsule())
+        }.buttonStyle(.plain).sheet(isPresented: $showsDiagnostics) { DeviceDiagnosticsSheet(deviceStore: deviceStore, device: device, state: state) }
     }
 }
 
@@ -483,8 +496,8 @@ private struct DeviceDiagnosticsSheetHeader: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Device Diagnostics").font(.system(size: 21, weight: .black, design: .rounded))
-                Text(deviceName).font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.secondary)
+                Text("Device Diagnostics").font(.system(size: 21, weight: .bold))
+                Text(deviceName).font(.system(size: 12, weight: .bold)).foregroundStyle(.secondary)
             }
 
             Spacer()
@@ -502,12 +515,12 @@ private struct DeviceDiagnosticsConnectionPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Connection Paths").font(.system(size: 12, weight: .black, design: .rounded))
+            Text("Connection Paths").font(.system(size: 12, weight: .bold))
             ForEach(lines, id: \.self) { line in connectionLine(line) }
         }.frame(maxWidth: .infinity, alignment: .leading).padding(12).background(panelBackground)
     }
 
-    private func connectionLine(_ line: String) -> some View { Text(line).font(.system(size: 12, weight: .medium, design: .rounded)).foregroundStyle(.secondary) }
+    private func connectionLine(_ line: String) -> some View { Text(line).font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary) }
 
     private var panelBackground: some View { RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.04)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.08), lineWidth: 1)) }
 }

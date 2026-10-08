@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): on-screen text goes through L() for the Turkish translation; MouseTune visual theme (neutral dark, sky-blue accent, SF Pro type).
 import AppKit
 import OpenSnekAppSupport
 import SwiftUI
@@ -12,7 +13,7 @@ struct LightingColorOrbRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(title).font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.82)).lineLimit(1).truncationMode(.tail)
+            Text(L(title)).font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.82)).lineLimit(1).truncationMode(.tail)
 
             Spacer(minLength: 12)
 
@@ -38,7 +39,7 @@ struct LightingColorOrbPicker: View {
             showsEditor = true
         } label: {
             Circle().fill(Color(rgb: color)).frame(width: 28, height: 28).overlay(Circle().stroke(Color.white.opacity(0.82), lineWidth: 1.5)).shadow(color: Color(rgb: color).opacity(0.38), radius: 6, y: 0).padding(8)
-        }.frame(width: 44, height: 44).buttonStyle(.plain).help(title).accessibilityLabel(title).accessibilityIdentifier("\(identifierPrefix)-orb-button").onChange(of: showsEditor) { _, isPresented in
+        }.frame(width: 44, height: 44).buttonStyle(.plain).help(L(title)).accessibilityLabel(title).accessibilityIdentifier("\(identifierPrefix)-orb-button").onChange(of: showsEditor) { _, isPresented in
             guard !isPresented else { return }
             if colorAtEditorOpen != color { remember(color) }
             colorAtEditorOpen = nil
@@ -64,13 +65,13 @@ struct LightingColorPopoverEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.88))
+            Text(L(title)).font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.88))
 
             colorRow(title: "Presets", colors: swatches.map(\.rgb), identifier: "preset")
 
             if !recentColors.isEmpty { colorRow(title: "Recent", colors: recentColors, identifier: "recent") }
 
-            ColorPicker("Picker", selection: colorPickerBinding, supportsOpacity: false).font(.system(size: 12, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.76)).accessibilityIdentifier("\(identifierPrefix)-system-color-picker")
+            ColorPicker("Picker", selection: colorPickerBinding, supportsOpacity: false).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.76)).accessibilityIdentifier("\(identifierPrefix)-system-color-picker")
 
             RGBSliderRow(label: "R", accessibilityIdentifier: "\(identifierPrefix)-red-slider", tint: Color.red, value: Binding(get: { color.r }, set: { color.r = max(0, min(255, $0)) }))
 
@@ -84,7 +85,7 @@ struct LightingColorPopoverEditor: View {
 
     @ViewBuilder private func colorRow(title: String, colors: [RGBColor], identifier: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.58))
+            Text(L(title)).font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.58))
 
             HStack(spacing: 8) { ForEach(Array(colors.enumerated()), id: \.offset) { index, rgb in ColorSwatchButton(color: Color(rgb: rgb), isSelected: rgb == color, action: { color = rgb }).accessibilityIdentifier("\(identifierPrefix)-\(identifier)-swatch-\(index)") } }
         }
@@ -110,7 +111,7 @@ struct SoftwareLightingPaletteEditor: View {
 
     private var paletteHeader: some View {
         HStack(spacing: 12) {
-            Text("Palette").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.82))
+            Text("Palette").font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.82))
 
             Spacer(minLength: 12)
 
@@ -130,7 +131,7 @@ struct SoftwareLightingPaletteEditor: View {
 
     private func paletteColorItem(_ index: Int) -> some View {
         VStack(spacing: 5) {
-            LightingColorOrbPicker(title: "\(preset.label) palette color \(index + 1)", identifierPrefix: "software-lighting-palette-\(index)", color: paletteBinding(index), swatches: swatches)
+            LightingColorOrbPicker(title: L("%@ palette color %@", L(preset.label), "\(index + 1)"), identifierPrefix: "software-lighting-palette-\(index)", color: paletteBinding(index), swatches: swatches)
 
             if maximumPaletteColorCount > 1 { PaletteRemoveColorButton(index: index, canRemove: palette.count > 1, remove: { onRemove(index) }) } else { PaletteRemoveColorPlaceholder() }
         }.frame(width: 44)
@@ -189,7 +190,7 @@ struct RGBSliderRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Text(label).font(.system(size: 11, weight: .black, design: .monospaced)).foregroundStyle(.white.opacity(0.82)).frame(width: 16, alignment: .leading)
+            Text(label).font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(.white.opacity(0.82)).frame(width: 16, alignment: .leading)
             Slider(value: Binding(get: { Double(value) }, set: { value = Int(round($0)) }), in: 0...255).tint(tint).optionalAccessibilityIdentifier(accessibilityIdentifier)
             Text("\(value)").font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundStyle(.white.opacity(0.8)).frame(width: 34, alignment: .trailing)
         }

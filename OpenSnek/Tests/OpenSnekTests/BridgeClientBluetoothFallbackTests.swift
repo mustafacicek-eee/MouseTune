@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): tests updated for the Basilisk V3 X Bluetooth battery scaling fix.
 import XCTest
 @testable import OpenSnek
 import OpenSnekCore

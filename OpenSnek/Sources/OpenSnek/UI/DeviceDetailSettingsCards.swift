@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): app name shown in the UI changed from OpenSnek to MouseTune; on-screen text goes through L() for the Turkish translation; MouseTune visual theme (neutral dark, sky-blue accent, SF Pro type).
 import AppKit
 import OpenSnekAppSupport
 import SwiftUI
@@ -12,8 +13,8 @@ struct OnConnectBehaviorCard: View {
 
     private var selectedDescription: String {
         switch editorStore.connectBehavior {
-        case .useMouseSettings: return "OpenSnek reads the current settings from the mouse when it connects and does not rewrite them automatically."
-        case .restoreOpenSnekSettings: return "OpenSnek reapplies the last profile you changed here when this mouse connects."
+        case .useMouseSettings: return "MouseTune reads the current settings from the mouse when it connects and does not rewrite them automatically."
+        case .restoreOpenSnekSettings: return "MouseTune reapplies the last profile you changed here when this mouse connects."
         }
     }
 
@@ -26,7 +27,7 @@ struct OnConnectBehaviorCard: View {
                 }.labelsHidden().pickerStyle(.segmented).accessibilityIdentifier("on-connect-picker")
 
                 HStack(alignment: .top, spacing: 10) {
-                    Text(selectedDescription).hintTextStyle().frame(maxWidth: .infinity, alignment: .leading)
+                    Text(L(selectedDescription)).hintTextStyle().frame(maxWidth: .infinity, alignment: .leading)
 
                     Button {
                         showsExpandedInfo.toggle()
@@ -35,7 +36,7 @@ struct OnConnectBehaviorCard: View {
                     }.buttonStyle(.plain).accessibilityLabel(showsExpandedInfo ? "Hide on connect details" : "Show on connect details").accessibilityIdentifier("on-connect-details-button")
                 }
 
-                if showsExpandedInfo { Text("Choose Restore Last Profile if you use this mouse with another computer or with Synapse. Vendor software can overwrite the live settings on reconnect, and this restores your OpenSnek setup.").hintTextStyle() }
+                if showsExpandedInfo { Text("Choose Restore Last Profile if you use this mouse with another computer or with Synapse. Vendor software can overwrite the live settings on reconnect, and this restores your MouseTune setup.").hintTextStyle() }
             }
         }
     }
@@ -63,7 +64,7 @@ struct SleepTimeoutCard: View {
     var body: some View {
         Card(title: "Power Management", accessibilityIdentifier: "power-management-card") {
             HStack {
-                Text("Sleep timeout").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.85))
+                Text("Sleep timeout").font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.85))
                 Spacer()
                 Text(formatTimeout(editorStore.editableSleepTimeout)).font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(.white)
             }
@@ -84,7 +85,7 @@ struct SleepTimeoutCard: View {
         let clamped = max(0, seconds)
         let mins = clamped / 60
         let secs = clamped % 60
-        return "\(mins)m \(String(format: "%02d", secs))s"
+        return L("%@m %@s", "\(mins)", String(format: "%02d", secs))
     }
 }
 
@@ -95,7 +96,7 @@ struct LowBatteryThresholdCard: View {
     var body: some View {
         Card(title: "Low Battery Threshold", accessibilityIdentifier: "low-battery-threshold-card") {
             HStack {
-                Text("Threshold").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.82))
+                Text("Threshold").font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.82))
                 Spacer()
                 let raw = max(0x0C, min(0x3F, editorStore.editableLowBatteryThresholdRaw))
                 Text("~\(approxPercent(raw))%").font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(.white)

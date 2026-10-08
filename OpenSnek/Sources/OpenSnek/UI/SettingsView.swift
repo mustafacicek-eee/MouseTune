@@ -1,5 +1,7 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): app name shown in the UI changed from OpenSnek to MouseTune; on-screen text goes through L() for the Turkish translation; compact single-page layout with a Restart Now button for language changes; MouseTune visual theme (neutral dark, sky-blue accent, SF Pro type).
 import AppKit
 import OpenSnekAppSupport
+import OpenSnekCore
 import SwiftUI
 
 /// Renders the settings view UI.
@@ -14,6 +16,7 @@ struct SettingsView: View {
     @AppStorage(DeveloperRuntimeOptions.settingStorageEnabledDefaultsKey) private var developerSettingStorageEnabled = true
     @State private var showsDiagnosticsSheet = false
     @State private var showsLocalStorageResetConfirmation = false
+    @State private var selectedLanguage = AppLanguagePreference.current
 
     private var selectedLevel: Binding<AppLogLevel> {
         Binding(
@@ -25,9 +28,10 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        formContent.formStyle(.grouped).padding(20).frame(width: 520).task { await runtimeStore.refreshHIDAccessStatus(forceRefresh: false) }.sheet(isPresented: $showsDiagnosticsSheet) { IssueDiagnosticsSheet(payload: deviceStore.githubIssueDiagnosticsPayload()) }.alert(
-            "Wipe OpenSnek local storage?", isPresented: $showsLocalStorageResetConfirmation
-        ) {
+        // MouseTune fork: a compact single page instead of a grouped Form, so every setting fits without scrolling.
+        settingsContent.padding(.horizontal, 22).padding(.vertical, 16).frame(width: 680).fixedSize(horizontal: false, vertical: true).task { await runtimeStore.refreshHIDAccessStatus(forceRefresh: false) }.sheet(isPresented: $showsDiagnosticsSheet) {
+            IssueDiagnosticsSheet(payload: deviceStore.githubIssueDiagnosticsPayload())
+        }.alert("Wipe MouseTune local storage?", isPresented: $showsLocalStorageResetConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Wipe", role: .destructive) {
                 Task {
@@ -42,14 +46,15 @@ struct SettingsView: View {
                 }
             }
         } message: {
-            Text("This removes saved preferences, cached device settings, launch-at-login state, and local logs for OpenSnek.")
+            Text("This removes saved preferences, cached device settings, launch-at-login state, and local logs for MouseTune.")
         }.onAppear { AppLog.updateLevel(AppLogLevel(rawValue: logLevelRawValue) ?? AppLog.defaultLevel, resetLog: false) }
     }
 
-    private var formContent: some View {
-        Form {
+    private var settingsContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
             permissionsSection
             generalSection
+            languageSection
             resetSection
             loggingSection
             if deviceStore.currentBuildChannel == .dev { developerSection }
@@ -58,47 +63,60 @@ struct SettingsView: View {
     }
 
     private var permissionsSection: some View {
-        Section("Permissions") {
-            LabeledContent("Input Monitoring") { Text(runtimeStore.hidAccessStatus.diagnosticsLabel).font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(permissionStatusColor) }
-            permissionActions
-        }
-    }
-
-    private var permissionActions: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
+        SettingsGroup(title: "Permissions") {
+            SettingsRow(title: "Input Monitoring") {
+                Text(L(runtimeStore.hidAccessStatus.diagnosticsLabel)).font(.system(size: 12, weight: .bold)).foregroundStyle(permissionStatusColor)
                 Button("Open Settings") { PermissionSupport.openInputMonitoringSettings() }
                 Button("Reset Permissions") { Task { await runtimeStore.resetAllPermissions() } }.disabled(runtimeStore.isResettingPermissions)
                 if runtimeStore.isResettingPermissions { ProgressView().controlSize(.small) }
             }
-            if let message = runtimeStore.permissionStatusMessage { Text(message).font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.secondary) }
+            if let message = runtimeStore.permissionStatusMessage { SettingsNote(text: message, isEmphasized: true) }
         }
     }
 
     private var generalSection: some View {
-        Section("General") {
-            Toggle("Show menu bar icon", isOn: Binding(get: { runtimeStore.backgroundServiceEnabled }, set: { newValue in Task { await runtimeStore.setBackgroundServiceEnabled(newValue) } }))
-            Toggle("Start at login", isOn: Binding(get: { runtimeStore.launchAtStartupEnabled }, set: { runtimeStore.setLaunchAtStartupEnabled($0) })).disabled(!runtimeStore.backgroundServiceEnabled)
-            if let message = runtimeStore.compactStatusMessage ?? runtimeStore.serviceStatusMessage { Text(message).font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.secondary) }
+        SettingsGroup(title: "General") {
+            SettingsRow(title: "Show menu bar icon") { Toggle("Show menu bar icon", isOn: Binding(get: { runtimeStore.backgroundServiceEnabled }, set: { newValue in Task { await runtimeStore.setBackgroundServiceEnabled(newValue) } })).labelsHidden().toggleStyle(.switch) }
+            SettingsRow(title: "Start at login") { Toggle("Start at login", isOn: Binding(get: { runtimeStore.launchAtStartupEnabled }, set: { runtimeStore.setLaunchAtStartupEnabled($0) })).labelsHidden().toggleStyle(.switch).disabled(!runtimeStore.backgroundServiceEnabled) }
+            if let message = runtimeStore.compactStatusMessage ?? runtimeStore.serviceStatusMessage { SettingsNote(text: message, isEmphasized: true) }
+        }
+    }
+
+    private var languageSection: some View {
+        SettingsGroup(title: "Language") {
+            SettingsRow(title: "App language") {
+                Picker(
+                    "App language",
+                    selection: Binding(
+                        get: { selectedLanguage },
+                        set: { newValue in
+                            selectedLanguage = newValue
+                            newValue.apply()
+                        })
+                ) { ForEach(AppLanguagePreference.allCases) { language in Text(language == .system ? L(language.title) : language.title).tag(language) } }.labelsHidden().pickerStyle(.menu).fixedSize().accessibilityIdentifier("settings-language-picker")
+                if selectedLanguage != AppLanguagePreference.atLaunch { Button("Restart Now") { runtimeStore.relaunchForLanguageChange() }.buttonStyle(.borderedProminent).accessibilityIdentifier("settings-language-restart-button") }
+            }
+            if selectedLanguage != AppLanguagePreference.atLaunch { SettingsNote(text: "The new language is used after MouseTune restarts.") }
         }
     }
 
     private var resetSection: some View {
-        Section("Reset App Data") {
-            Text("Wipe OpenSnek's saved preferences, cached device settings, background-service state, and local logs. Relaunch the app after resetting.").font(.system(size: 12, weight: .medium, design: .rounded)).foregroundStyle(.secondary)
-            HStack(spacing: 10) {
-                Button("Wipe Local Storage", role: .destructive) { showsLocalStorageResetConfirmation = true }.disabled(runtimeStore.isResettingLocalStorage)
+        SettingsGroup(title: "Reset App Data") {
+            HStack(alignment: .center, spacing: 12) {
+                SettingsNote(text: "Wipe MouseTune's saved preferences, cached device settings, background-service state, and local logs. Relaunch the app after resetting.")
+                Spacer(minLength: 8)
                 if runtimeStore.isResettingLocalStorage { ProgressView().controlSize(.small) }
+                Button("Wipe Local Storage", role: .destructive) { showsLocalStorageResetConfirmation = true }.disabled(runtimeStore.isResettingLocalStorage)
             }
-            if let message = runtimeStore.localStorageResetMessage { Text(message).font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.secondary) }
+            if let message = runtimeStore.localStorageResetMessage { SettingsNote(text: message, isEmphasized: true) }
         }
     }
 
     private var loggingSection: some View {
-        Section("Logging") {
-            Picker("Log level", selection: selectedLevel) { ForEach(AppLogLevel.allCases) { level in Text(level.label).tag(level) } }.pickerStyle(.menu)
-            Text("Use Info or Debug before reproducing a bug. Changing the level starts a fresh log file.").font(.system(size: 12, weight: .medium, design: .rounded)).foregroundStyle(.secondary)
-            LabeledContent("Log file") { Text(AppLog.path).font(.system(size: 11, weight: .medium, design: .monospaced)).textSelection(.enabled) }
+        SettingsGroup(title: "Logging") {
+            SettingsRow(title: "Log level") { Picker("Log level", selection: selectedLevel) { ForEach(AppLogLevel.allCases) { level in Text(L(level.label)).tag(level) } }.labelsHidden().pickerStyle(.menu).fixedSize() }
+            SettingsNote(text: "Use Info or Debug before reproducing a bug. Changing the level starts a fresh log file.")
+            SettingsRow(title: "Log file") { Text(AppLog.path).font(.system(size: 11, weight: .medium, design: .monospaced)).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle).textSelection(.enabled) }
             HStack(spacing: 10) {
                 Button("Open Log File") { NSWorkspace.shared.open(URL(fileURLWithPath: AppLog.path)) }
                 Button("Open Log Folder") { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: AppLog.path)]) }
@@ -108,16 +126,14 @@ struct SettingsView: View {
     }
 
     private var developerSection: some View {
-        Section("Developer") {
+        SettingsGroup(title: "Developer") {
             Toggle("Enable runtime polling", isOn: developerPollingBinding)
             Toggle("Enable passive HID DPI stream", isOn: developerPassiveHIDBinding)
             Toggle("Enable setting storage", isOn: $developerSettingStorageEnabled)
             Toggle("Remember window size", isOn: $developerRememberWindowSizeEnabled)
             Toggle("Preview latest release update", isOn: developerReleaseUpdateDryRunBinding)
-            Text("Turn off Enable setting storage to apply mouse changes without updating OpenSnek's saved reconnect state. Re-enable it, then reconnect the mouse or relaunch OpenSnek to verify the last stored state rehydrates.").font(.system(size: 12, weight: .medium, design: .rounded))
-                .foregroundStyle(.secondary)
-            Text("Use the transport switches to isolate polling from passive HID DPI callbacks during debugging, temporarily disable window-frame restore while testing launch behavior, or preview the latest GitHub release update prompt.").font(.system(size: 12, weight: .medium, design: .rounded))
-                .foregroundStyle(.secondary)
+            SettingsNote(text: "Turn off Enable setting storage to apply mouse changes without updating MouseTune's saved reconnect state. Re-enable it, then reconnect the mouse or relaunch MouseTune to verify the last stored state rehydrates.")
+            SettingsNote(text: "Use the transport switches to isolate polling from passive HID DPI callbacks during debugging, temporarily disable window-frame restore while testing launch behavior, or preview the latest GitHub release update prompt.")
         }
     }
 
@@ -149,8 +165,8 @@ struct SettingsView: View {
     }
 
     private var bugReportsSection: some View {
-        Section("Bug Reports") {
-            Text("Include the failing action, whether reconnecting changed it, and a log captured at Info or Debug.").font(.system(size: 12, weight: .medium, design: .rounded)).foregroundStyle(.secondary)
+        SettingsGroup(title: "Bug Reports") {
+            SettingsNote(text: "Include the failing action, whether reconnecting changed it, and a log captured at Info or Debug.")
             HStack(spacing: 10) {
                 Button("Preview Payload") { showsDiagnosticsSheet = true }
                 Button("Copy Payload") { copyDiagnosticsPayload() }
@@ -178,6 +194,42 @@ struct SettingsView: View {
     }
 }
 
+/// MouseTune fork: titled, rounded group used by the compact settings page.
+private struct SettingsGroup<Content: View>: View {
+    let title: String
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(L(title)).font(.system(size: 13, weight: .bold)).foregroundStyle(.primary)
+            VStack(alignment: .leading, spacing: 8) { content() }.padding(.horizontal, 12).padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading).background(
+                RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.05)).overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.08), lineWidth: 1)))
+        }
+    }
+}
+
+/// MouseTune fork: one settings line with the label on the left and its controls on the right.
+private struct SettingsRow<Controls: View>: View {
+    let title: String
+    @ViewBuilder let controls: () -> Controls
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Text(L(title)).font(.system(size: 13))
+            Spacer(minLength: 12)
+            controls()
+        }.frame(minHeight: 22)
+    }
+}
+
+/// MouseTune fork: secondary explanatory text inside a settings group.
+private struct SettingsNote: View {
+    let text: String
+    var isEmphasized = false
+
+    var body: some View { Text(L(text)).font(.system(size: 11.5, weight: isEmphasized ? .semibold : .regular)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true) }
+}
+
 /// Renders the issue diagnostics sheet UI.
 private struct IssueDiagnosticsSheet: View {
     let payload: String
@@ -187,8 +239,8 @@ private struct IssueDiagnosticsSheet: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("GitHub Issue Payload").font(.system(size: 21, weight: .black, design: .rounded))
-                    Text("Paste this into a GitHub bug report.").font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.secondary)
+                    Text("GitHub Issue Payload").font(.system(size: 21, weight: .bold))
+                    Text("Paste this into a GitHub bug report.").font(.system(size: 12, weight: .bold)).foregroundStyle(.secondary)
                 }
 
                 Spacer()

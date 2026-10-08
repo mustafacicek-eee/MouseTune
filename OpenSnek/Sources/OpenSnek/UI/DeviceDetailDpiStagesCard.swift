@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): on-screen text goes through L() for the Turkish translation; MouseTune visual theme (neutral dark, sky-blue accent, SF Pro type); compact one-line DPI stage rows.
 import AppKit
 import OpenSnekAppSupport
 import SwiftUI
@@ -28,7 +29,7 @@ private struct DpiStageCountHeader: View {
 
     var body: some View {
         HStack {
-            Text("Enabled stages: \(editorStore.editableStageCount) / \(maximumEditableDpiStageCount)").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.82))
+            Text(L("Enabled stages: %@ / %@", "\(editorStore.editableStageCount)", "\(maximumEditableDpiStageCount)")).font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.82))
             Spacer()
             HStack(spacing: 8) {
                 stageCountButton(systemName: "minus.circle.fill", isEnabled: editorStore.editableStageCount > 1, accessibilityIdentifier: "dpi-stage-count-decrease-button", action: decreaseStageCount)
@@ -72,18 +73,41 @@ private struct DpiStageRow: View {
 
     private var isSelectedStage: Bool { stageCount == 1 || editorStore.editableActiveStage == index + 1 }
 
-    private var stageColor: Color { dpiStageAccent(for: index, isSelected: isSelectedStage) }
+    /// MouseTune fork: one accent for the selected stage; the stage's own color is kept as a small dot in its header.
+    private var stageColor: Color { MouseTuneTheme.accent }
 
     private var stagePair: DpiPair { editorStore.stagePair(index) }
 
     private var isXYExpanded: Bool { supportsIndependentXYDPI && editorStore.isStageXYExpanded(index) }
 
     var body: some View {
+        Group {
+            if isXYExpanded {
+                VStack(alignment: .leading, spacing: 4) {
+                    headerRow
+                    splitSummary
+                    sliderControls
+                }
+            } else {
+                compactRow
+            }
+        }.padding(.horizontal, 10).padding(.vertical, 8).background(rowBackground).shadow(color: isSelectedStage ? stageColor.opacity(0.18) : .clear, radius: 14, y: 0)
+    }
+
+    /// MouseTune fork: stage name, slider and value on one line; the DPI scale is shown only for the selected stage.
+    private var compactRow: some View {
         VStack(alignment: .leading, spacing: 4) {
-            headerRow
+            HStack(alignment: .dpiSliderTrack, spacing: 12) {
+                DpiStageHeader(editorStore: editorStore, index: index, stageCount: stageCount, stageColor: stageColor, isSelectedStage: isSelectedStage).frame(width: 124, alignment: .leading)
+
+                DpiStageSingleSlider(editorStore: editorStore, index: index, profileID: profileID, tint: isSelectedStage ? stageColor : Color.white.opacity(0.45), markerColor: isSelectedStage ? stageColor : Color.white.opacity(0.45), showsMarkers: isSelectedStage)
+
+                stageValueControls
+
+                if supportsIndependentXYDPI { DpiStageXYToggleButton(isExpanded: isXYExpanded, tint: stageColor) { if editorStore.toggleStageXYExpansion(index) { editorStore.scheduleAutoApplyDpi() } } }
+            }
             splitSummary
-            sliderControls
-        }.padding(8).background(rowBackground).shadow(color: isSelectedStage ? stageColor.opacity(0.30) : .clear, radius: 12, y: 0)
+        }
     }
 
     private var headerRow: some View {
@@ -111,32 +135,34 @@ private struct DpiStageRow: View {
                 }
             }
         } else {
-            DpiValueField(placeholder: "DPI", value: editorStore.stageValue(index), width: 100, accessibilityIdentifier: "dpi-stage-\(index + 1)-value-field") { parsed in
+            DpiValueField(placeholder: "DPI", value: editorStore.stageValue(index), width: 84, accessibilityIdentifier: "dpi-stage-\(index + 1)-value-field") { parsed in
                 editorStore.updateStage(index, value: parsed)
                 editorStore.scheduleAutoApplyDpi()
             }
         }
     }
 
-    @ViewBuilder private var splitSummary: some View { if supportsIndependentXYDPI && !isXYExpanded && stagePair.x != stagePair.y { Text("Current split: X \(stagePair.x) / Y \(stagePair.y)").font(.system(size: 11, weight: .medium, design: .monospaced)).foregroundStyle(.white.opacity(0.62)) } }
+    @ViewBuilder private var splitSummary: some View {
+        if supportsIndependentXYDPI && !isXYExpanded && stagePair.x != stagePair.y { Text(L("Current split: X %@ / Y %@", "\(stagePair.x)", "\(stagePair.y)")).font(.system(size: 11, weight: .medium, design: .monospaced)).foregroundStyle(.white.opacity(0.62)) }
+    }
 
     @ViewBuilder private var sliderControls: some View {
         if isXYExpanded {
-            DpiStageAxisSlider(editorStore: editorStore, label: "X", value: stagePair.x, stageIndex: index, profileID: profileID, tint: isSelectedStage ? stageColor : Color.white.opacity(0.80)) { quantized in
+            DpiStageAxisSlider(editorStore: editorStore, label: "X", value: stagePair.x, stageIndex: index, profileID: profileID, tint: isSelectedStage ? stageColor : Color.white.opacity(0.45)) { quantized in
                 editorStore.updateStageX(index, value: quantized)
                 editorStore.scheduleAutoApplyDpi()
             }
-            DpiStageAxisSlider(editorStore: editorStore, label: "Y", value: stagePair.y, stageIndex: index, profileID: profileID, tint: isSelectedStage ? stageColor.opacity(0.8) : Color.white.opacity(0.65)) { quantized in
+            DpiStageAxisSlider(editorStore: editorStore, label: "Y", value: stagePair.y, stageIndex: index, profileID: profileID, tint: isSelectedStage ? stageColor.opacity(0.8) : Color.white.opacity(0.40)) { quantized in
                 editorStore.updateStageY(index, value: quantized)
                 editorStore.scheduleAutoApplyDpi()
             }
         } else {
-            DpiStageSingleSlider(editorStore: editorStore, index: index, profileID: profileID, tint: isSelectedStage ? stageColor : Color.white.opacity(0.80), markerColor: isSelectedStage ? stageColor : Color.white.opacity(0.72))
+            DpiStageSingleSlider(editorStore: editorStore, index: index, profileID: profileID, tint: isSelectedStage ? stageColor : Color.white.opacity(0.45), markerColor: isSelectedStage ? stageColor : Color.white.opacity(0.45))
         }
     }
 
     private var rowBackground: some View {
-        RoundedRectangle(cornerRadius: 10).fill(isSelectedStage ? stageColor.opacity(0.24) : stageColor.opacity(0.10)).overlay(RoundedRectangle(cornerRadius: 10).stroke(isSelectedStage ? stageColor.opacity(0.95) : stageColor.opacity(0.35), lineWidth: isSelectedStage ? 2 : 1))
+        RoundedRectangle(cornerRadius: 12).fill(isSelectedStage ? MouseTuneTheme.accentSoft : MouseTuneTheme.rowFill).overlay(RoundedRectangle(cornerRadius: 12).stroke(isSelectedStage ? stageColor.opacity(0.75) : MouseTuneTheme.rowStroke, lineWidth: isSelectedStage ? 1.5 : 1))
     }
 }
 
@@ -149,7 +175,7 @@ private struct DpiStageAxisTextField: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Text(label).font(.system(size: 11, weight: .black, design: .monospaced)).foregroundStyle(.white.opacity(0.7))
+            Text(label).font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(.white.opacity(0.7))
             DpiValueField(placeholder: label, value: value, width: 88, accessibilityIdentifier: "dpi-stage-\(stageIndex + 1)-\(label.lowercased())-field") { parsed in onCommit(parsed) }
         }
     }
@@ -163,7 +189,7 @@ private struct DpiStageXYToggleButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text("X/Y").font(.system(size: 10, weight: .black, design: .monospaced)).foregroundStyle(isExpanded ? tint : .white.opacity(0.78)).padding(.horizontal, 8).padding(.vertical, 6).background(Capsule().fill(isExpanded ? tint.opacity(0.18) : Color.white.opacity(0.06))).overlay(
+            Text("X/Y").font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundStyle(isExpanded ? tint : .white.opacity(0.78)).padding(.horizontal, 8).padding(.vertical, 6).background(Capsule().fill(isExpanded ? tint.opacity(0.18) : Color.white.opacity(0.06))).overlay(
                 Capsule().stroke(isExpanded ? tint.opacity(0.95) : Color.white.opacity(0.14), lineWidth: 1))
         }.buttonStyle(.plain)
     }
@@ -181,7 +207,7 @@ private struct DpiStageAxisSlider: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("\(label)-Axis").font(.system(size: 11, weight: .black, design: .monospaced)).foregroundStyle(.white.opacity(0.7))
+            Text(L("%@-Axis", label)).font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(.white.opacity(0.7))
             VStack(alignment: .leading, spacing: 4) {
                 Slider(
                     value: Binding(get: { DeviceProfiles.dpiSliderPosition(for: value, profileID: profileID) }, set: { newPosition in onChange(DeviceProfiles.dpi(forSliderPosition: newPosition, profileID: profileID)) }), in: 0...1,
@@ -201,6 +227,7 @@ private struct DpiStageSingleSlider: View {
     let profileID: DeviceProfileID?
     let tint: Color
     let markerColor: Color
+    var showsMarkers = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -211,9 +238,9 @@ private struct DpiStageSingleSlider: View {
                         editorStore.updateStage(index, value: DeviceProfiles.dpi(forSliderPosition: newPosition, profileID: profileID))
                         editorStore.scheduleAutoApplyDpi()
                     }), in: 0...1, onEditingChanged: { editing in editorStore.isEditingDpiControl = editing }
-            ).tint(tint).accessibilityIdentifier("dpi-stage-\(index + 1)-slider")
+            ).tint(tint).accessibilityIdentifier("dpi-stage-\(index + 1)-slider").alignmentGuide(.dpiSliderTrack) { dimensions in dimensions[VerticalAlignment.center] }
 
-            DpiSliderScaleMarkers(profileID: profileID, markerColor: markerColor)
+            if showsMarkers { DpiSliderScaleMarkers(profileID: profileID, markerColor: markerColor) }
         }
     }
 }
@@ -267,7 +294,12 @@ private struct DpiSelectableStageHeaderLabel: View {
 
     var body: some View { label.labelStyle(.titleAndIcon).padding(.horizontal, 10).padding(.vertical, 6).background(backgroundShape).overlay(borderShape).contentShape(Capsule()) }
 
-    private var label: some View { Label(title, systemImage: systemImage) }
+    private var label: some View {
+        HStack(spacing: 7) {
+            Label(L("Stage %@", "\(stageNumber)"), systemImage: systemImage)
+            Circle().fill(dpiStageAccent(for: stageNumber - 1, isSelected: false)).frame(width: 7, height: 7).accessibilityHidden(true)
+        }
+    }
 
     private var title: String { "Stage \(stageNumber)" }
 
@@ -275,9 +307,9 @@ private struct DpiSelectableStageHeaderLabel: View {
 
     private var borderShape: some View { Capsule().stroke(borderColor, lineWidth: 1) }
 
-    private var backgroundColor: Color { isSelectedStage ? stageColor.opacity(0.18) : Color.white.opacity(0.05) }
+    private var backgroundColor: Color { isSelectedStage ? stageColor.opacity(0.16) : Color.white.opacity(0.04) }
 
-    private var borderColor: Color { isSelectedStage ? stageColor.opacity(0.95) : Color.white.opacity(0.16) }
+    private var borderColor: Color { isSelectedStage ? stageColor.opacity(0.70) : Color.white.opacity(0.10) }
 }
 
 private func dpiStageAccent(for index: Int, isSelected: Bool) -> Color {
@@ -336,4 +368,13 @@ struct DpiValueField: View {
         onCommit(parsed)
         draft = String(parsed)
     }
+}
+
+/// MouseTune fork: lines the stage name and value field up with the slider track, even when the scale is shown below it.
+extension VerticalAlignment {
+    /// Alignment identifier for the DPI slider track.
+    private enum DpiSliderTrack: AlignmentID { static func defaultValue(in dimensions: ViewDimensions) -> CGFloat { dimensions[VerticalAlignment.center] } }
+
+    /// Vertical center of the DPI slider track.
+    static let dpiSliderTrack = VerticalAlignment(DpiSliderTrack.self)
 }

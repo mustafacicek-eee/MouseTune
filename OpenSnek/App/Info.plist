@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Modified in the MouseTune fork (mustafacicek-eee, 2026): display name, Bluetooth usage text and the list of UI languages. -->
 <plist version="1.0">
 <dict>
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string>
+        <string>tr</string>
+    </array>
     <key>CFBundleDisplayName</key>
-    <string>OpenSnek</string>
+    <string>MouseTune</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -35,7 +41,7 @@
     <key>LSMinimumSystemVersion</key>
     <string>$(MACOSX_DEPLOYMENT_TARGET)</string>
     <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>OpenSnek uses Bluetooth to discover and configure compatible Razer devices.</string>
+    <string>MouseTune uses Bluetooth to discover and configure compatible Razer devices.</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
 </dict>

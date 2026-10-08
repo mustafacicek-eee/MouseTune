@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): log files live under ~/Library/Logs/MouseTune (old OpenSnek logs are left in place).
 import Foundation
 import OSLog
 
@@ -45,9 +46,9 @@ final class AppLog: @unchecked Sendable {
     static let shared = AppLog()
     static let levelDefaultsKey = "openSnek.logLevel"
     static let defaultLevel: AppLogLevel = .warning
-    static let mainLogFileName = "open-snek.log"
+    static let mainLogFileName = "mousetune.log"
 
-    static var logsDirectoryURL: URL { FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs/OpenSnek", isDirectory: true) }
+    static var logsDirectoryURL: URL { FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs/MouseTune", isDirectory: true) }
 
     private let queue = DispatchQueue(label: "open.snek.log", qos: .utility)
     private let logger = Logger(subsystem: "open.snek.mac", category: "runtime")

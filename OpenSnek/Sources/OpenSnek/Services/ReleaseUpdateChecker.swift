@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): update checks disabled (this fork has no release feed).
 import Foundation
 import OpenSnekAppSupport
 
@@ -169,7 +170,7 @@ struct ReleaseUpdateChecker: ReleaseUpdateChecking, Sendable {
         return rawValue.flatMap(AppBuildChannel.init(rawValue:)) ?? .release
     }
 
-    static func shouldCheckForUpdates(bundle: Bundle = .main) -> Bool { currentBuildChannel(bundle: bundle) == .release }
+    static func shouldCheckForUpdates(bundle _: Bundle = .main) -> Bool { false }  // local build: update checks disabled
 
     static func dryRunAppcastURL(defaults: UserDefaults = .standard) -> URL { DeveloperRuntimeOptions.releaseUpdateDryRunAppcastURL(defaults: defaults) ?? defaultDryRunAppcastURL }
 

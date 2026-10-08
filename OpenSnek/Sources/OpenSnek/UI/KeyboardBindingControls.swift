@@ -1,5 +1,7 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): on-screen text goes through L() for the Turkish translation; MouseTune visual theme (neutral dark, sky-blue accent, SF Pro type).
 import AppKit
 import SwiftUI
+import OpenSnekCore
 
 /// Stores keyboard binding editor data.
 struct KeyboardBindingEditor: View {
@@ -35,7 +37,7 @@ private struct KeyboardBindingCurrentKeyButton: View {
         HStack(spacing: 6) {
             Text(label)
             Image(systemName: "keyboard").font(.system(size: 11, weight: .bold))
-        }.font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.86)).padding(.horizontal, 10).padding(.vertical, 6).background(buttonBackground)
+        }.font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.86)).padding(.horizontal, 10).padding(.vertical, 6).background(buttonBackground)
     }
 
     private var buttonBackground: some View { Capsule().fill(Color.white.opacity(0.06)).overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 1)) }
@@ -62,7 +64,7 @@ private struct KeyboardBindingRecorderPopover: View {
         VStack(alignment: .leading, spacing: 12) {
             title
 
-            Text("Current binding: \(currentLabel)").font(.system(size: 12, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.72))
+            Text(L("Current binding: %@", currentLabel)).font(.system(size: 12, weight: .medium)).foregroundStyle(.white.opacity(0.72))
 
             capturePanel
 
@@ -71,7 +73,7 @@ private struct KeyboardBindingRecorderPopover: View {
                 dismiss()
             }
 
-            Text("Media and macro families are still hidden until the underlying protocol taxonomy is validated.").font(.system(size: 11, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.58)).frame(width: 328, alignment: .leading)
+            Text("Media and macro families are still hidden until the underlying protocol taxonomy is validated.").font(.system(size: 11, weight: .medium)).foregroundStyle(.white.opacity(0.58)).frame(width: 328, alignment: .leading)
 
             HStack {
                 Spacer()
@@ -80,7 +82,7 @@ private struct KeyboardBindingRecorderPopover: View {
         }.padding(14).frame(width: 360).background(Color(red: 0.09, green: 0.11, blue: 0.13))
     }
 
-    private var title: some View { Text("Press A Key").font(.system(size: 14, weight: .bold, design: .rounded)).foregroundStyle(.white) }
+    private var title: some View { Text("Press A Key").font(.system(size: 14, weight: .bold)).foregroundStyle(.white) }
 
     private var capturePanel: some View {
         ZStack {
@@ -97,9 +99,9 @@ private struct KeyboardBindingRecorderPopover: View {
 
     private var captureInstructions: some View {
         VStack(spacing: 6) {
-            Text("Press one supported key").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.86))
+            Text("Press one supported key").font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.86))
 
-            Text(supportsModifierChords ? "Shortcuts can include modifiers." : "Modifiers can be captured on their own.").font(.system(size: 11, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.58))
+            Text(L(supportsModifierChords ? "Shortcuts can include modifiers." : "Modifiers can be captured on their own.")).font(.system(size: 11, weight: .medium)).foregroundStyle(.white.opacity(0.58))
         }
     }
 
@@ -158,11 +160,11 @@ private struct KeyboardBindingSearchableKeyPicker: View {
 
     private var optionListBackground: some View { RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.04)).overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.09), lineWidth: 1)) }
 
-    private var emptySearchResult: some View { Text("No supported keys").font(.system(size: 12, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.52)).frame(maxWidth: .infinity, minHeight: optionListHeight - 16) }
+    private var emptySearchResult: some View { Text("No supported keys").font(.system(size: 12, weight: .medium)).foregroundStyle(.white.opacity(0.52)).frame(maxWidth: .infinity, minHeight: optionListHeight - 16) }
 
     private func optionSection(_ entry: (group: KeyboardBindingGroup, options: [KeyboardBindingOption])) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(entry.group.label).font(.system(size: 10, weight: .black, design: .rounded)).foregroundStyle(.white.opacity(0.42)).textCase(.uppercase)
+            Text(L(entry.group.label)).font(.system(size: 10, weight: .bold)).foregroundStyle(.white.opacity(0.42)).textCase(.uppercase)
 
             ForEach(entry.options) { option in optionButton(option) }
         }.frame(maxWidth: .infinity, alignment: .leading)
@@ -175,7 +177,7 @@ private struct KeyboardBindingSearchableKeyPicker: View {
             HStack(spacing: 8) {
                 Image(systemName: optionSystemImageName(for: option)).font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.48)).frame(width: 18).accessibilityHidden(true)
 
-                Text(option.label).font(.system(size: 12, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.84)).lineLimit(1).truncationMode(.tail)
+                Text(L(option.label)).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.84)).lineLimit(1).truncationMode(.tail)
 
                 Spacer(minLength: 8)
 
@@ -186,9 +188,9 @@ private struct KeyboardBindingSearchableKeyPicker: View {
 
     @ViewBuilder private func optionTrailingIcon(_ option: KeyboardBindingOption) -> some View {
         if optionIsSelected(option) {
-            Image(systemName: "checkmark").font(.system(size: 11, weight: .black)).foregroundStyle(.white.opacity(0.76)).accessibilityHidden(true)
+            Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.76)).accessibilityHidden(true)
         } else if supportsModifierChords && !isSelectingChordAction && AppStateKeyboardSupport.isModifierKey(option.hidKey) {
-            Image(systemName: "chevron.right").font(.system(size: 10, weight: .black)).foregroundStyle(.white.opacity(0.36)).accessibilityHidden(true)
+            Image(systemName: "chevron.right").font(.system(size: 10, weight: .bold)).foregroundStyle(.white.opacity(0.36)).accessibilityHidden(true)
         }
     }
 
@@ -255,7 +257,7 @@ private struct KeyboardBindingSearchField: View {
 
     private var searchIcon: some View { Image(systemName: "magnifyingglass").font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.52)).accessibilityHidden(true) }
 
-    private var searchTextField: some View { TextField(prompt, text: $searchText).textFieldStyle(.plain).font(.system(size: 12, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.88)).accessibilityIdentifier("keyboard-binding-key-search") }
+    private var searchTextField: some View { TextField(L(prompt), text: $searchText).textFieldStyle(.plain).font(.system(size: 12, weight: .medium)).foregroundStyle(.white.opacity(0.88)).accessibilityIdentifier("keyboard-binding-key-search") }
 
     private var clearButton: some View {
         Button {
@@ -287,11 +289,11 @@ private struct KeyboardBindingPendingModifierRow: View {
 
     private var modifierIcon: some View { Image(systemName: KeyboardBindingPickerIcons.modifierSystemImageName(for: option.hidKey)).font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.70)).frame(width: 16).accessibilityHidden(true) }
 
-    private var modifierLabel: some View { Text("\(option.label) +").font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.86)).lineLimit(1) }
+    private var modifierLabel: some View { Text("\(option.label) +").font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.86)).lineLimit(1) }
 
-    private var useAloneButton: some View { Button("Use Alone", action: onUseAlone).buttonStyle(.plain).font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.72)) }
+    private var useAloneButton: some View { Button("Use Alone", action: onUseAlone).buttonStyle(.plain).font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.72)) }
 
-    private var clearButton: some View { Button(action: onClear) { Image(systemName: "xmark").font(.system(size: 10, weight: .black)).frame(width: 20, height: 20) }.buttonStyle(.plain).foregroundStyle(.white.opacity(0.52)).help("Clear modifier") }
+    private var clearButton: some View { Button(action: onClear) { Image(systemName: "xmark").font(.system(size: 10, weight: .bold)).frame(width: 20, height: 20) }.buttonStyle(.plain).foregroundStyle(.white.opacity(0.52)).help("Clear modifier") }
 
     private var rowBackground: some View { RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.06)).overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.12), lineWidth: 1)) }
 }

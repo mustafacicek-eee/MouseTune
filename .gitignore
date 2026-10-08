@@ -63,3 +63,6 @@ OpenSnek/OpenSnek.xcodeproj/
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
 *.xcodeproj/project.xcworkspace/xcuserdata/
+
+# local scratch, not part of the repo
+_to_delete/

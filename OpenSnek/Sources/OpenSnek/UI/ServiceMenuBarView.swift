@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): battery forecast label added to the menu bar; app name shown in the UI changed from OpenSnek to MouseTune; on-screen text goes through L() for the Turkish translation; MouseTune visual theme (neutral dark, sky-blue accent, SF Pro type).
 import AppKit
 import OpenSnekCore
 import SwiftUI
@@ -119,22 +120,22 @@ struct ServiceMenuBarView: View {
             statusRow
             if showsDeviceControls {
                 VStack(alignment: .leading, spacing: 10) {
-                    if !controlsEnabled, let message = deviceStore.selectedDeviceInteractionMessage { Text(message).font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(.secondary) }
+                    if !controlsEnabled, let message = deviceStore.selectedDeviceInteractionMessage { Text(L(message)).font(.system(size: 11, weight: .bold)).foregroundStyle(.secondary) }
 
                     VStack(alignment: .leading, spacing: 14) {
                         stagePicker
                         dpiSlider
                     }.disabled(!controlsEnabled).opacity(controlsEnabled ? 1.0 : 0.45)
 
-                    if let message = runtimeStore.compactStatusMessage { Text(message).font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(.secondary) }
+                    if let message = runtimeStore.compactStatusMessage { Text(L(message)).font(.system(size: 11, weight: .bold)).foregroundStyle(.secondary) }
                 }
             } else if let message = deviceStore.selectedDeviceInteractionMessage {
-                Text(message).font(.system(size: 11, weight: .medium, design: .rounded)).foregroundStyle(.secondary)
+                Text(L(message)).font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
             } else {
-                Text("Connect a supported mouse to edit DPI from the menu bar.").font(.system(size: 11, weight: .medium, design: .rounded)).foregroundStyle(.secondary)
+                Text("Connect a supported mouse to edit DPI from the menu bar.").font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
             }
             Divider()
-            actionRow("Show OpenSnek", systemImage: "rectangle.on.rectangle") { runtimeStore.openFullAppFromService() }
+            actionRow("Show MouseTune", systemImage: "rectangle.on.rectangle") { runtimeStore.openFullAppFromService() }
             actionRow("Settings…", systemImage: "gearshape") { runtimeStore.openSettingsFromService() }
             toggleRow("Start at login", systemImage: "checkmark.circle", isOn: Binding(get: { runtimeStore.launchAtStartupEnabled }, set: { runtimeStore.setLaunchAtStartupEnabled($0) }))
             actionRow("Quit", systemImage: "power") { runtimeStore.terminateServiceProcess() }
@@ -151,7 +152,7 @@ struct ServiceMenuBarView: View {
         VStack(alignment: .leading, spacing: showsDevicePicker ? 8 : 3) {
             if showsDevicePicker {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Device").font(.system(size: 10, weight: .bold, design: .rounded)).foregroundStyle(.secondary)
+                    Text("Device").font(.system(size: 10, weight: .bold)).foregroundStyle(.secondary)
                     Menu {
                         ForEach(deviceStore.devices) { device in
                             Button {
@@ -162,35 +163,38 @@ struct ServiceMenuBarView: View {
                         }
                     } label: {
                         HStack(spacing: 10) {
-                            Text(selectedDevicePickerTitle).lineLimit(1).minimumScaleFactor(0.8)
+                            Text(L(selectedDevicePickerTitle)).lineLimit(1).minimumScaleFactor(0.8)
 
                             Spacer(minLength: 8)
 
-                            Image(systemName: "chevron.up.chevron.down").font(.system(size: 11, weight: .black)).foregroundStyle(.secondary)
-                        }.font(.system(size: 15, weight: .black, design: .rounded)).padding(.horizontal, 12).padding(.vertical, 9).frame(maxWidth: .infinity, alignment: .leading).background(
+                            Image(systemName: "chevron.up.chevron.down").font(.system(size: 11, weight: .bold)).foregroundStyle(.secondary)
+                        }.font(.system(size: 15, weight: .bold)).padding(.horizontal, 12).padding(.vertical, 9).frame(maxWidth: .infinity, alignment: .leading).background(
                             RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.04)).overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.08), lineWidth: 1))
                         ).contentShape(RoundedRectangle(cornerRadius: 10))
                     }.menuStyle(.borderlessButton).menuIndicator(.hidden).frame(maxWidth: .infinity, alignment: .leading)
                 }
             } else {
-                Text(deviceStore.selectedDevice?.product_name ?? "No device connected").font(.system(size: 15, weight: .black, design: .rounded))
+                Text(deviceStore.selectedDevice?.product_name ?? L("No device connected")).font(.system(size: 15, weight: .bold))
             }
-            Text(deviceStore.selectedDevice?.connectionLabel ?? "Waiting for a supported mouse").font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(.secondary)
+            Text(L(deviceStore.selectedDevice?.connectionLabel ?? "Waiting for a supported mouse")).font(.system(size: 11, weight: .bold)).foregroundStyle(.secondary)
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var statusRow: some View {
         HStack(spacing: 10) {
-            Label(deviceStore.currentDeviceStatusIndicator.label, systemImage: "circle.fill").foregroundStyle(deviceStore.currentDeviceStatusIndicator.color).font(.system(size: 11, weight: .bold, design: .rounded)).help(deviceStore.currentDeviceStatusTooltip ?? "")
+            Label(L(deviceStore.currentDeviceStatusIndicator.label), systemImage: "circle.fill").foregroundStyle(deviceStore.currentDeviceStatusIndicator.color).font(.system(size: 11, weight: .bold)).help(deviceStore.currentDeviceStatusTooltip ?? "")
 
             Spacer()
 
             if let battery = deviceStore.state?.battery_percent {
                 let batteryIcon = ServiceMenuBarPresentation.batteryIcon(percent: battery, charging: deviceStore.state?.charging, thresholdRaw: deviceStore.state?.low_battery_threshold_raw)
-                HStack(spacing: 4) {
-                    Image(systemName: batteryIcon.symbolName, variableValue: batteryIcon.variableValue)
-                    Text("\(battery)%")
-                }.font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(batteryIcon.accent == .low ? BatteryPresentation.lowBatteryColor : .secondary)
+                VStack(alignment: .trailing, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Image(systemName: batteryIcon.symbolName, variableValue: batteryIcon.variableValue)
+                        Text("\(battery)%")
+                    }.font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(batteryIcon.accent == .low ? BatteryPresentation.lowBatteryColor : .secondary)
+                    if let deviceID = deviceStore.selectedDevice?.id { BatteryForecastLabel(deviceID: deviceID, currentPercent: battery, fontSize: 10) }
+                }
             }
         }
     }
@@ -223,9 +227,9 @@ struct ServiceMenuBarView: View {
         let controlMode = ServiceMenuBarPresentation.compactDpiControlMode(for: activePair, supportsIndependentXYDPI: editorStore.selectedDeviceSupportsIndependentXYDPI)
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(dpiSliderTitle(for: controlMode)).font(.system(size: 12, weight: .bold, design: .rounded))
+                Text(dpiSliderTitle(for: controlMode)).font(.system(size: 12, weight: .bold))
                 Spacer()
-                Text(dpiSliderValueText(for: controlMode)).font(.system(size: 12, weight: .black, design: .monospaced)).foregroundStyle(.secondary)
+                Text(dpiSliderValueText(for: controlMode)).font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundStyle(.secondary)
             }
             switch controlMode {
             case .scalar: compactDpiSlider(currentValue: { editorStore.stageValue(editorStore.compactActiveStageIndex) }, update: { value in editorStore.updateStage(editorStore.compactActiveStageIndex, value: value) }, profileID: profileID)
@@ -240,8 +244,8 @@ struct ServiceMenuBarView: View {
 
     private func dpiSliderTitle(for mode: ServiceMenuBarPresentation.CompactDpiControlMode) -> String {
         switch mode {
-        case .scalar: return "Stage \(editorStore.editableActiveStage) DPI"
-        case .split: return "Stage \(editorStore.editableActiveStage) X/Y DPI"
+        case .scalar: return L("Stage %@ DPI", "\(editorStore.editableActiveStage)")
+        case .split: return L("Stage %@ X/Y DPI", "\(editorStore.editableActiveStage)")
         }
     }
 
@@ -255,9 +259,9 @@ struct ServiceMenuBarView: View {
     private func compactDpiAxisSlider(axisLabel: String, currentValue: @escaping () -> Int, update: @escaping (Int) -> Void, profileID: DeviceProfileID?) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
-                Text(axisLabel).font(.system(size: 10, weight: .black, design: .rounded)).foregroundStyle(.secondary)
+                Text(axisLabel).font(.system(size: 10, weight: .bold)).foregroundStyle(.secondary)
                 Spacer()
-                Text("\(currentValue())").font(.system(size: 11, weight: .black, design: .monospaced)).foregroundStyle(.secondary)
+                Text("\(currentValue())").font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(.secondary)
             }
             compactDpiSlider(currentValue: currentValue, update: update, profileID: profileID)
         }
@@ -285,7 +289,7 @@ struct ServiceMenuBarView: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: systemImage).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
-                Text(title).font(.system(size: 12, weight: .bold, design: .rounded))
+                Text(L(title)).font(.system(size: 12, weight: .bold))
                 Spacer()
             }.padding(.horizontal, 10).frame(height: Self.menuActionRowHeight).frame(maxWidth: .infinity, alignment: .leading).background(
                 RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.04)).overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.08), lineWidth: 1))
@@ -297,7 +301,7 @@ struct ServiceMenuBarView: View {
         Toggle(isOn: isOn) {
             HStack(spacing: 10) {
                 Image(systemName: systemImage).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
-                Text(title).font(.system(size: 12, weight: .bold, design: .rounded))
+                Text(L(title)).font(.system(size: 12, weight: .bold))
                 Spacer()
             }
         }.toggleStyle(.switch).padding(.horizontal, 10).frame(height: Self.menuActionRowHeight).frame(maxWidth: .infinity, alignment: .leading).background(
@@ -322,7 +326,7 @@ private struct CompactStagePickerButton: View {
     var body: some View { Button(action: action) { stageLabel }.buttonStyle(.plain) }
 
     private var stageLabel: some View {
-        Text(title).font(.system(size: 11, weight: .black, design: .rounded)).lineLimit(1).minimumScaleFactor(0.7).foregroundStyle(isSelected ? Color.accentColor : .primary).frame(maxWidth: .infinity, minHeight: 34).background(stageBackground).overlay(stageBorder).contentShape(Capsule())
+        Text(title).font(.system(size: 11, weight: .bold)).lineLimit(1).minimumScaleFactor(0.7).foregroundStyle(isSelected ? Color.accentColor : .primary).frame(maxWidth: .infinity, minHeight: 34).background(stageBackground).overlay(stageBorder).contentShape(Capsule())
     }
 
     private var stageBackground: some View { Capsule().fill(isSelected ? Color.accentColor.opacity(0.18) : Color.primary.opacity(0.06)) }
@@ -371,7 +375,7 @@ struct ServiceMenuBarStatusItemLabel: View {
     private var helpText: String {
         if let device = deviceStore.selectedDevice, let currentDpi { return "\(device.product_name), \(currentDpi) DPI" }
         if let device = deviceStore.selectedDevice { return device.product_name }
-        return "OpenSnek"
+        return "MouseTune"
     }
 }
 

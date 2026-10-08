@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): MouseTune visual theme (neutral dark, sky-blue accent, SF Pro type).
 import AppKit
 
 /// Defines OpenSnek branding values.
@@ -11,8 +12,8 @@ enum OpenSnekBranding {
 
     static func menuBarDpiBadge(dpi: Int) -> NSImage {
         let badgeHeight = max(18, floor(NSStatusBar.system.thickness - 2))
-        let labelFont = NSFont.systemFont(ofSize: 10, weight: .black)
-        let valueFont = NSFont.monospacedDigitSystemFont(ofSize: 8, weight: .black)
+        let labelFont = NSFont.systemFont(ofSize: 10, weight: .bold)
+        let valueFont = NSFont.monospacedDigitSystemFont(ofSize: 8, weight: .bold)
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = .center
 

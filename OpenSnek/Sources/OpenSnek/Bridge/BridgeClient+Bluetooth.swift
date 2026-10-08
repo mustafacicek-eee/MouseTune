@@ -1,3 +1,4 @@
+// Modified in the MouseTune fork (mustafacicek-eee, 2026): Basilisk V3 X HyperSpeed Bluetooth battery raw value scaled on a 0-255 range.
 import Foundation
 import OpenSnekCore
 import OpenSnekHardware
